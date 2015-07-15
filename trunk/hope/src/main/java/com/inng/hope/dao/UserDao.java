@@ -32,7 +32,7 @@ public interface UserDao {
 	 */
 	Integer addUser(User user);
 
-	User login(String userName, String password);
+	User login(@Param("loginName") String loginName);
 
 	Integer changePassword(@Param("id") Integer id, @Param("oldPassword") String oldPassword, @Param("newPassword") String newPassword);
 
