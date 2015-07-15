@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.inng.hope.entity.User;
 import com.inng.hope.result.ResultObject;
 import com.inng.hope.services.UserDaoServices;
 
@@ -64,9 +65,17 @@ public class UserController {
 	}
 	
 	
-	@RequestMapping("login.htm")
-	public String login(){
+	@RequestMapping("main.htm")
+	public String main() {
 		return "main";
+	}
+	
+	@RequestMapping("login.htm")
+	public @ResponseBody String login(HttpSession session,@RequestParam(value="loginName") String loginName,
+														 @RequestParam(value="loginPassword") String loginPassword){
+		User user = userDaoServices.login(loginName, loginPassword);
+		session.setAttribute(user.getId()+"", user);
+		return main();
 	}
 	
 }

@@ -1,62 +1,58 @@
 package com.inng.hope.entity;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-
 public class User {
 
-    /**
-     * 登录帐号编号
-     */
-    private Integer id;
+	/**
+	 * 登录帐号编号
+	 */
+	private Integer id;
 
-    private String nickName;
+	private String nickName;
 
-    private String loginName;
+	private String loginName;
 
-    private String loginPassword;
+	private String loginPassword;
 
-    private Integer type;
+	private Integer type;
 
-    public Integer getId() {
-        return id;
-    }
+	public Integer getId() {
+		return id;
+	}
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
+	public void setId(Integer id) {
+		this.id = id;
+	}
 
-    public String getNickName() {
-        return nickName;
-    }
+	public String getNickName() {
+		return nickName;
+	}
 
-    public void setNickName(String nickName) {
-        this.nickName = nickName;
-    }
+	public void setNickName(String nickName) {
+		this.nickName = nickName;
+	}
 
-    public String getLoginName() {
-        return loginName;
-    }
+	public String getLoginName() {
+		return loginName;
+	}
 
-    public void setLoginName(String loginName) {
-        this.loginName = loginName;
-    }
+	public void setLoginName(String loginName) {
+		this.loginName = loginName;
+	}
 
-    public String getLoginPassword() {
-        return loginPassword;
-    }
+	public String getLoginPassword() {
+		return loginPassword;
+	}
 
-    public void setLoginPassword(String loginPassword) {
-        this.loginPassword = loginPassword;
-    }
+	public void setLoginPassword(String loginPassword) {
+		this.loginPassword = loginPassword;
+	}
 
-    public Integer getType() {
-        return type;
-    }
+	public Integer getType() {
+		return type;
+	}
 
-    public void setType(Integer type) {
-        this.type = type;
-    }
+	public void setType(Integer type) {
+		this.type = type;
+	}
 
 }
