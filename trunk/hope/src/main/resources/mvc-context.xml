@@ -9,9 +9,13 @@
 		beans -->
 	<context:component-scan base-package="com.inng.hope" />
 
-	<!-- Configures the @Controller programming model -->
+	<!-- Configures the @Controller programming model 
 	<mvc:annotation-driven />
-
+	-->
+	
+	<bean id="HopeRequestMappingHandlerMapping" class="com.inng.hope.mvc.HopeRequestMappingHandlerMapping"/>
+	<bean id="HopeRequestMappingHandlerAdapter" class="com.inng.hope.mvc.HopeRequestMappingHandlerAdapter"/>
+	
 	<!-- Forwards requests to the "/" resource to the "welcome" view 
 	<mvc:view-controller path="/" view-name="/index" />-->
 
