@@ -23,7 +23,7 @@
     
     <!-- 登录 -->
     <select id="login" parameterType="user" resultType="user"> 
-        select id,userName,password,reg_time from user where userName = #{userName} and password = #{password}
+        select id,nickName,loginName,loginPassword from user where loginName = #{loginName}
     </select>
     
     <!-- 修改密码 -->
