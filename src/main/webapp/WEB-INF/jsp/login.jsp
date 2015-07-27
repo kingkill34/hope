@@ -56,10 +56,6 @@
             </div>
         </div>
 
-        <div class="span4 no-account">
-            <p>Don't have an account?</p>
-            <a href="signup.html">Sign up</a>
-        </div>
     </div>
 
 	<!-- scripts -->

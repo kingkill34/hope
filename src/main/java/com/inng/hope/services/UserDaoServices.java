@@ -16,4 +16,6 @@ public interface UserDaoServices {
 	ResultObject delUserById(Integer userId);
 
 	ResultObject addUser(String userName, String password);
+	
+	void getByid(Integer id);
 }
