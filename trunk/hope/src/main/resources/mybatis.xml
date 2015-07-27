@@ -5,19 +5,10 @@
 <configuration>
     <typeAliases>
         <typeAlias type="com.inng.hope.entity.User" alias="user"/>
-        <typeAlias type="com.inng.hope.entity.Member" alias="member"/>
-        <typeAlias type="com.inng.hope.entity.ConsumingRecords" alias="consumingRecords"/>
-        <typeAlias type="com.inng.hope.entity.RechargeRecords" alias="rechargeRecords"/>
-    	<typeAlias type="com.inng.hope.entity.TestUser" alias="testUser"/>
-    	<typeAlias type="com.inng.hope.entity.TestUserDetail" alias="testUserDetail"/>
     
     </typeAliases>
     
     <mappers>
         <mapper resource="com/inng/hope/dao/UserDaoMapper.xml"/>
-        <mapper resource="com/inng/hope/dao/MemberDaoMapper.xml"/>
-        <mapper resource="com/inng/hope/dao/TestUserDao.xml"/>
-        <mapper resource="com/inng/hope/dao/TestUserDetail.xml"/>
-        
     </mappers>
 </configuration>

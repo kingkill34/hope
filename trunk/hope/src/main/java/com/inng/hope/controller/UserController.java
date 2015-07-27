@@ -28,5 +28,12 @@ public class UserController {
 		session.setAttribute(user.getId() + "", user);
 		return main();
 	}
+	
+	
+	@RequestMapping
+	public @ResponseBody String getById(HttpSession session,Integer id) {
+		userDaoServices.getByid(id);
+		return main();
+	}
 
 }
