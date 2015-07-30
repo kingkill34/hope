@@ -13,8 +13,8 @@
 	<mvc:annotation-driven />
 	-->
 	
-	<bean id="HopeRequestMappingHandlerMapping" class="com.inng.hope.mvc.HopeRequestMappingHandlerMapping"/>
-	<bean id="HopeRequestMappingHandlerAdapter" class="com.inng.hope.mvc.HopeRequestMappingHandlerAdapter"/>
+	<bean id="HopeRequestMappingHandlerMapping" class="com.inng.hope.springmvc.HopeRequestMappingHandlerMapping"/>
+	<bean id="HopeRequestMappingHandlerAdapter" class="com.inng.hope.springmvc.HopeRequestMappingHandlerAdapter"/>
 	
 	<!-- Forwards requests to the "/" resource to the "welcome" view 
 	<mvc:view-controller path="/" view-name="/index" />-->
