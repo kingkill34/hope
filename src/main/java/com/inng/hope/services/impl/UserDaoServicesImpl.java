@@ -41,7 +41,8 @@ public class UserDaoServicesImpl extends ResultObject implements UserDaoServices
 	
 	@Override
 	public void getByid(Integer id) {
-		userDao.getById(id);
+		User user = userDao.getById(id);
+		System.out.println(1);
 		
 	}
 
