@@ -40,7 +40,7 @@
 
 	
 	<!-- sqlSessionFactory   -->
-	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+	<bean id="sqlSessionFactory" class="com.inng.hope.mybatis.HopeSqlSessionFactoryBean">
 	    <property name="dataSource" ref="dataSource"/>
 	    <property name="configLocation" value="classpath:mybatis.xml" />
 	</bean>

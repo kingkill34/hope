@@ -13,7 +13,7 @@ import org.springframework.web.servlet.DispatcherServlet;
 public class SpringMvcInit extends DispatcherServlet{
 
 	public SpringMvcInit(){
-		getXml();
+		//getXml();
 	}
 	
 	
@@ -34,9 +34,10 @@ public class SpringMvcInit extends DispatcherServlet{
 			selectElement.setText("select * from user where id =#{id}");
 			
 			OutputFormat format = new OutputFormat();
-			format.setEncoding("utf-8");
+			format.setEncoding("utf8");
 			
 			XMLWriter xmlWriter = new XMLWriter(new FileWriter(xmlPath),format);
+			
 	        xmlWriter.write(document);
 	        xmlWriter.flush();
 			
