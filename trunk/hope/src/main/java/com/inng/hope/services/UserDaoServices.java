@@ -2,10 +2,11 @@ package com.inng.hope.services;
 
 import javax.servlet.http.HttpSession;
 
+import com.inng.hope.base.BaseServices;
 import com.inng.hope.entity.User;
 import com.inng.hope.result.ResultObject;
 
-public interface UserDaoServices {
+public interface UserDaoServices extends BaseServices<User> {
 
 	ResultObject getList(Integer pagination, HttpSession session);
 
@@ -17,5 +18,4 @@ public interface UserDaoServices {
 
 	ResultObject addUser(String userName, String password);
 	
-	void getByid(Integer id);
 }

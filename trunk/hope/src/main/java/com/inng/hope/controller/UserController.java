@@ -32,7 +32,13 @@ public class UserController {
 	
 	@RequestMapping
 	public @ResponseBody String getById(HttpSession session,Integer id) {
-		userDaoServices.getByid(id);
+		userDaoServices.getById(id);
+		return main();
+	}
+	
+	@RequestMapping
+	public @ResponseBody String insert(HttpSession session,User user) {
+		userDaoServices.insert(user);
 		return main();
 	}
 

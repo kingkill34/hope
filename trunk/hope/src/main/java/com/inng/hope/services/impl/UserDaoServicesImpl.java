@@ -1,21 +1,16 @@
 package com.inng.hope.services.impl;
 
-import java.util.List;
-
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
 
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 
 import com.inng.hope.dao.UserDao;
 import com.inng.hope.entity.User;
 import com.inng.hope.exception.user.UserNotExits;
 import com.inng.hope.exception.user.UserOrPasswordError;
 import com.inng.hope.result.ResultObject;
-import com.inng.hope.result.code.UserPrompt;
 import com.inng.hope.services.UserDaoServices;
-import com.inng.hope.util.Page;
 
 @Service(value = "userDaoServicesImpl")
 public class UserDaoServicesImpl extends ResultObject implements UserDaoServices {
@@ -39,11 +34,9 @@ public class UserDaoServicesImpl extends ResultObject implements UserDaoServices
 	}
 	
 	
-	@Override
-	public void getByid(Integer id) {
-		User user = userDao.getById(id);
-		System.out.println(1);
-		
+	@Override			
+	public User getById(Integer id) {
+		return userDao.get(id);
 	}
 
 
@@ -72,6 +65,12 @@ public class UserDaoServicesImpl extends ResultObject implements UserDaoServices
 	public ResultObject addUser(String userName, String password) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+
+	@Override
+	public Integer insert(User t) {
+		return userDao.insert(t);
 	}
 
 
