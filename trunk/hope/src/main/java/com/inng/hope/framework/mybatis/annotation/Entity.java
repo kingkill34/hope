@@ -1,4 +1,4 @@
-package com.inng.hope.mybatis.annotation;
+package com.inng.hope.framework.mybatis.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
