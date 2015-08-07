@@ -1,4 +1,4 @@
-package com.inng.hope.springmvc;
+package com.inng.hope.framework.springmvc;
 
 import java.lang.reflect.Method;
 

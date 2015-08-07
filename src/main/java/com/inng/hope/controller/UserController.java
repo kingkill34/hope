@@ -36,9 +36,23 @@ public class UserController {
 		return main();
 	}
 	
+	
+	@RequestMapping
+	public @ResponseBody String getList(HttpSession session) {
+		userDaoServices.getList();
+		return main();
+	}
+	
 	@RequestMapping
 	public @ResponseBody String insert(HttpSession session,User user) {
 		userDaoServices.insert(user);
+		return main();
+	}
+	
+	
+	@RequestMapping
+	public @ResponseBody String delUserById(HttpSession session,User user) {
+		userDaoServices.delById(user.getId());
 		return main();
 	}
 

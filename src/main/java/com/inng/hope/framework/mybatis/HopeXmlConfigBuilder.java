@@ -1,4 +1,4 @@
-package com.inng.hope.mybatis;
+package com.inng.hope.framework.mybatis;
 
 import java.io.InputStream;
 import java.io.Reader;

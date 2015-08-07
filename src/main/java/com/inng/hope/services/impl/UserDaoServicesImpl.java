@@ -1,7 +1,8 @@
 package com.inng.hope.services.impl;
 
+import java.util.List;
+
 import javax.annotation.Resource;
-import javax.servlet.http.HttpSession;
 
 import org.springframework.stereotype.Service;
 
@@ -11,6 +12,7 @@ import com.inng.hope.exception.user.UserNotExits;
 import com.inng.hope.exception.user.UserOrPasswordError;
 import com.inng.hope.result.ResultObject;
 import com.inng.hope.services.UserDaoServices;
+import com.inng.hope.util.ParamsMap;
 
 @Service(value = "userDaoServicesImpl")
 public class UserDaoServicesImpl extends ResultObject implements UserDaoServices {
@@ -21,7 +23,9 @@ public class UserDaoServicesImpl extends ResultObject implements UserDaoServices
 
 	@Override
 	public User login(String loginName, String loginPassword) {
-		User user = userDao.login(loginName);
+		ParamsMap paramsMap = new ParamsMap("loginName", "=", loginName);
+		paramsMap.put("loginPassword", "=", loginPassword);
+		User user = userDao.get(paramsMap.getMap());
 		if (user == null) {
 			throw new UserNotExits();
 		}
@@ -36,41 +40,36 @@ public class UserDaoServicesImpl extends ResultObject implements UserDaoServices
 	
 	@Override			
 	public User getById(Integer id) {
-		return userDao.get(id);
-	}
-
-
-	@Override
-	public ResultObject getList(Integer pagination, HttpSession session) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-
-	@Override
-	public ResultObject changePassword(Integer id, String newPassword, String oldPassword) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-
-	@Override
-	public ResultObject delUserById(Integer userId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-
-	@Override
-	public ResultObject addUser(String userName, String password) {
-		// TODO Auto-generated method stub
-		return null;
+		ParamsMap paramsMap = new ParamsMap("id", "=", id);
+		return userDao.get(paramsMap.getMap());
 	}
 
 
 	@Override
 	public Integer insert(User t) {
 		return userDao.insert(t);
+	}
+
+
+
+
+	@Override
+	public List<User> getList() {
+		return userDao.getList(null);
+	}
+
+
+	@Override
+	public Integer delById(Integer id) {
+		ParamsMap paramsMap = new ParamsMap("id", "=", id);
+		return userDao.delete(paramsMap.getMap());
+	}
+
+
+	@Override
+	public Integer update(User user) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 

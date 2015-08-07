@@ -1,9 +1,11 @@
-package com.inng.hope.mybatis;
+package com.inng.hope.framework.mybatis;
 
 public class MapperTagReources {
 
 	//method name
 	public static final String GET = "get";
+	
+	public static final String GET_LIST = "getList";
 	
 	public static final String INSERT = "insert";
 	
@@ -30,7 +32,9 @@ public class MapperTagReources {
 	
 	public static final String MAPPER_RESULT_TYPE= "resultType";
 	
-	public static final String MAPPER_IF= "<if test=\"%s != null and %s !='' \"> %s = #{%s}%s</if>";
+	public static final String MAPPER_IF= "<if test=\"%s != null and %s !='' \"> %s ${%s} #{%s}%s</if>";
+	
+	public static final String MAPPER_WHERE_IF= "<if test=\"%s != null and %s !='' \"> AND %s ${%s} #{%s}</if>";
 	
 	
 	//java data type
@@ -40,13 +44,17 @@ public class MapperTagReources {
 	
 	public static final String STRING = "String";
 	
+	public static final String MAP = "Map";
+	
 	
 	//sql
-	public static final String SQL_SELECT = "SELECT %s FROM %s WHERE id=#{id}";
+	public static final String SQL_SELECT = "SELECT %s FROM %s <where>%s</where>";
 	
 	public static final String SQL_INSERT = "INSERT INTO %s <set>%s</set>";
 	
-	public static final String SQL_UPDATE = "";
+	public static final String SQL_DELETE = "DELETE FROM %s <where>%s</where>";
+	
+	public static final String SQL_UPDATE = "DELETE %s <set>%s</set>";
 
 	
 }
