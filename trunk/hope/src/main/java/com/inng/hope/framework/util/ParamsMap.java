@@ -1,4 +1,4 @@
-package com.inng.hope.util;
+package com.inng.hope.framework.util;
 
 import java.util.HashMap;
 import java.util.Map;

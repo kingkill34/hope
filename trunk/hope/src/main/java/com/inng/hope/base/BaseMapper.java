@@ -11,5 +11,7 @@ public interface BaseMapper<T> {
 	
 	public Integer insert(T t);
 	
+	public Integer update(T t);
+	
 	public Integer delete(Map<String, Object> params);
 }
