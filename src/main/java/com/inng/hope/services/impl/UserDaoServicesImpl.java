@@ -10,9 +10,9 @@ import com.inng.hope.dao.UserDao;
 import com.inng.hope.entity.User;
 import com.inng.hope.exception.user.UserNotExits;
 import com.inng.hope.exception.user.UserOrPasswordError;
+import com.inng.hope.framework.util.ParamsMap;
 import com.inng.hope.result.ResultObject;
 import com.inng.hope.services.UserDaoServices;
-import com.inng.hope.util.ParamsMap;
 
 @Service(value = "userDaoServicesImpl")
 public class UserDaoServicesImpl extends ResultObject implements UserDaoServices {
