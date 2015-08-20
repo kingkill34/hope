@@ -10,7 +10,7 @@
 		</filter>
 	</appender>
 	<root>
-		<priority value="debug" />
+		<priority value="info" />
 		<appender-ref ref="CONSOLE" />
 	</root>
 </log4j:configuration>

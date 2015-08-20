@@ -5,13 +5,13 @@ import java.util.Map;
 
 public interface BaseMapper<T> {
 
-	public T get(Map<String, Object> params);
+	public T get(Map<String, Object> condtions);
 	
-	public List<T> getList(Map<String, Object> params);
+	public List<T> getList(Map<String, Object> condtions);
 	
 	public Integer insert(T t);
 	
-	public Integer update(T t);
+	public Integer update(Map<String, Object> map);
 	
-	public Integer delete(Map<String, Object> params);
+	public Integer delete(Map<String, Object> condtions);
 }
