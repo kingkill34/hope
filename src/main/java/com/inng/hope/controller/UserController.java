@@ -38,8 +38,8 @@ public class UserController {
 	
 	
 	@RequestMapping
-	public @ResponseBody String getList(HttpSession session) {
-		userDaoServices.getList();
+	public @ResponseBody String getList(HttpSession session,String loginName, String loginPassword) {
+		userDaoServices.getList(loginName, loginPassword);
 		return main();
 	}
 	

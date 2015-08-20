@@ -38,8 +38,8 @@ public class HopeMappperBuiler {
 				bulidGetList(root, entityClz.getDeclaredFields(), entityClzName);
 				buildInsert(root, entityClz.getDeclaredFields(),entityClzName);
 				buildDelete(root, entityClz.getDeclaredFields(), entityClzName);
+				buildUpdate(root, entityClz.getDeclaredFields(), entityClzName);
 			}
-
 			inputStream = new ByteArrayInputStream(StringEscapeUtils.unescapeXml(document.asXML()).getBytes("utf-8"));
 
 		} catch (Exception e) {
@@ -72,7 +72,8 @@ public class HopeMappperBuiler {
 			selectFields.append(fieldName + comma);
 
 			String operation = "operation" + fieldName;
-			where.append(String.format(MapperTagReources.MAPPER_WHERE_IF, fieldName, fieldName, fieldName, operation, fieldName));
+			String whereFieldName = "where"+ fieldName;
+			where.append(String.format(MapperTagReources.MAPPER_WHERE_IF, whereFieldName, whereFieldName, fieldName, operation,whereFieldName));
 		}
 
 		String context = String.format(MapperTagReources.SQL_SELECT, selectFields.toString(), tableName, where.toString());
@@ -92,7 +93,7 @@ public class HopeMappperBuiler {
 			if (i != fieldsLength - 1) {
 				comma = ",";
 			}
-			sb.append(String.format(MapperTagReources.MAPPER_IF, fieldName, fieldName, fieldName, fieldName, comma));
+			sb.append(String.format(MapperTagReources.MAPPER_IF_EQ, fieldName, fieldName, fieldName, fieldName, comma));
 
 		}
 
@@ -110,13 +111,37 @@ public class HopeMappperBuiler {
 			Field field = fields[i];
 			String fieldName = field.getName();
 			String operation = "operation" + fieldName;
-			sb.append(String.format(MapperTagReources.MAPPER_WHERE_IF, fieldName, fieldName, fieldName, operation, fieldName));
+			String whereFieldName = "where"+ fieldName;
+			sb.append(String.format(MapperTagReources.MAPPER_WHERE_IF, whereFieldName, whereFieldName, fieldName, operation,whereFieldName));
 		}
 		
 		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_DELETE);
 		String context = String.format(MapperTagReources.SQL_DELETE, tableName, sb.toString());
 		setElementAttr(element, MapperTagReources.DELETE, MapperTagReources.MAP, null, context);
 	}
+	
+	
+	private void buildUpdate(Element root, Field[] fields, String tableName) {
+		StringBuffer selectFields = new StringBuffer();
+		StringBuffer where = new StringBuffer();
+
+		int fieldsLength = fields.length;
+		for (int i = 0; i < fieldsLength; i++) {
+			Field field = fields[i];
+			String fieldName = field.getName();
+			String operation = "operation" + fieldName;
+			String whereFieldName = "where"+ fieldName;
+			
+			selectFields.append(String.format(MapperTagReources.MAPPER_UPDATE_IF, fieldName,fieldName,fieldName,fieldName));
+			where.append(String.format(MapperTagReources.MAPPER_WHERE_IF, whereFieldName, whereFieldName, fieldName, operation,whereFieldName));
+		}
+		
+		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_UPDATE);
+		String context = String.format(MapperTagReources.SQL_UPDATE, tableName, selectFields.toString(),where.toString());
+		setElementAttr(element, MapperTagReources.UPDATE, MapperTagReources.MAP, null, context);
+	}
+	
+	
 
 	private void setElementAttr(Element element, String mapperId, String parameterType, String resultType, String context) {
 		if (!StringUtils.isEmpty(mapperId)) {

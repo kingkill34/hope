@@ -10,7 +10,7 @@ public interface UserDaoServices extends BaseServices<User> {
 
 	User login(String loginName, String loginPassword);
 
-	List<User> getList();
+	List<User> getList(String loginName, String loginPassword);
 
 	
 }

@@ -34,7 +34,11 @@ public class MapperTagReources {
 	
 	public static final String MAPPER_IF= "<if test=\"%s != null and %s !='' \"> %s ${%s} #{%s}%s</if>";
 	
+	public static final String MAPPER_IF_EQ= "<if test=\"%s != null and %s !='' \"> %s = #{%s} %s</if>";
+	
 	public static final String MAPPER_WHERE_IF= "<if test=\"%s != null and %s !='' \"> AND %s ${%s} #{%s}</if>";
+	
+	public static final String MAPPER_UPDATE_IF= "<if test=\"%s != null and %s !='' \">%s = #{%s},</if>";
 	
 	
 	//java data type
@@ -54,7 +58,7 @@ public class MapperTagReources {
 	
 	public static final String SQL_DELETE = "DELETE FROM %s <where>%s</where>";
 	
-	public static final String SQL_UPDATE = "DELETE %s <set>%s</set>";
+	public static final String SQL_UPDATE = "UPDATE %s <set>%s</set> <where>%s</where>";
 
 	
 }

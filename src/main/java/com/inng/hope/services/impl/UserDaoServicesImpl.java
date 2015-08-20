@@ -25,7 +25,7 @@ public class UserDaoServicesImpl extends ResultObject implements UserDaoServices
 	public User login(String loginName, String loginPassword) {
 		ParamsMap paramsMap = new ParamsMap("loginName", "=", loginName);
 		paramsMap.put("loginPassword", "=", loginPassword);
-		User user = userDao.get(paramsMap.getMap());
+		User user = userDao.get(paramsMap.getParams());
 		if (user == null) {
 			throw new UserNotExits();
 		}
@@ -41,7 +41,7 @@ public class UserDaoServicesImpl extends ResultObject implements UserDaoServices
 	@Override			
 	public User getById(Integer id) {
 		ParamsMap paramsMap = new ParamsMap("id", "=", id);
-		return userDao.get(paramsMap.getMap());
+		return userDao.get(paramsMap.getParams());
 	}
 
 
@@ -54,22 +54,24 @@ public class UserDaoServicesImpl extends ResultObject implements UserDaoServices
 
 
 	@Override
-	public List<User> getList() {
-		return userDao.getList(null);
+	public List<User> getList(String loginName, String loginPassword) {
+		ParamsMap paramsMap = new ParamsMap("loginName", "=", loginName);
+		paramsMap.put("loginPassword", "=", loginPassword);
+		return userDao.getList(paramsMap.getParams());
 	}
 
 
 	@Override
 	public Integer delById(Integer id) {
 		ParamsMap paramsMap = new ParamsMap("id", "=", id);
-		return userDao.delete(paramsMap.getMap());
+		return userDao.delete(paramsMap.getParams());
 	}
 
 
 	@Override
 	public Integer update(User user) {
-		// TODO Auto-generated method stub
-		return null;
+		ParamsMap paramsMap = new ParamsMap(user,"id", "=", 9);
+		return userDao.update(paramsMap.getParams());
 	}
 
 
