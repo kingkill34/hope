@@ -50,6 +50,8 @@ public class MapperTagReources {
 	
 	public static final String MAP = "Map";
 	
+	public static final String PARAMS_MAP = "paramsMap";
+	
 	
 	//sql
 	public static final String SQL_SELECT = "SELECT %s FROM %s <where>%s</where>";
