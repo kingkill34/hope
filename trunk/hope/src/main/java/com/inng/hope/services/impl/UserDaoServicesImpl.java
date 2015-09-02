@@ -20,62 +20,50 @@ public class UserDaoServicesImpl extends ResultObject implements UserDaoServices
 	@Resource(name = "userDao")
 	private UserDao userDao;
 
-
 	@Override
 	public User login(String loginName, String loginPassword) {
-		ParamsMap paramsMap = new ParamsMap("loginName", "=", loginName);
-		paramsMap.put("loginPassword", "=", loginPassword);
-		User user = userDao.get(paramsMap.getParams());
+		ParamsMap paramsMap = new ParamsMap("loginName", loginName);
+		paramsMap.put("loginPassword",loginPassword);
+		User user = userDao.get(paramsMap);
 		if (user == null) {
 			throw new UserNotExits();
 		}
-		
-		if(!user.getLoginPassword().equals(loginPassword)){
+
+		if (!user.getLoginPassword().equals(loginPassword)) {
 			throw new UserOrPasswordError();
 		}
-		
+
 		return user;
 	}
-	
-	
-	@Override			
-	public User getById(Integer id) {
-		ParamsMap paramsMap = new ParamsMap("id", "=", id);
-		return userDao.get(paramsMap.getParams());
-	}
 
+	@Override
+	public User getById(Integer id) {
+		ParamsMap paramsMap = new ParamsMap("id", id);
+		return userDao.get(paramsMap);
+	}
 
 	@Override
 	public Integer insert(User t) {
 		return userDao.insert(t);
 	}
 
-
-
-
 	@Override
 	public List<User> getList(String loginName, String loginPassword) {
-		ParamsMap paramsMap = new ParamsMap("loginName", "=", loginName);
-		paramsMap.put("loginPassword", "=", loginPassword);
-		return userDao.getList(paramsMap.getParams());
+		ParamsMap paramsMap = new ParamsMap("loginName", loginName);
+		paramsMap.put("loginPassword", loginPassword);
+		return userDao.getList(paramsMap);
 	}
-
 
 	@Override
 	public Integer delById(Integer id) {
-		ParamsMap paramsMap = new ParamsMap("id", "=", id);
-		return userDao.delete(paramsMap.getParams());
+		ParamsMap paramsMap = new ParamsMap("id", id);
+		return userDao.delete(paramsMap);
 	}
-
 
 	@Override
 	public Integer update(User user) {
-		ParamsMap paramsMap = new ParamsMap(user,"id", "=", 9);
-		return userDao.update(paramsMap.getParams());
+		ParamsMap paramsMap = new ParamsMap(user, "id", 1);
+		return userDao.update(paramsMap);
 	}
 
-
-	
-
-	
 }

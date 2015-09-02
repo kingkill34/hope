@@ -55,5 +55,11 @@ public class UserController {
 		userDaoServices.delById(user.getId());
 		return main();
 	}
+	
+	@RequestMapping
+	public @ResponseBody String update(User user){
+		userDaoServices.update(user);
+		return main();
+	}
 
 }
