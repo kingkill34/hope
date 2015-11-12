@@ -5,6 +5,8 @@ public class MapperTagReources {
 	//method name
 	public static final String GET = "get";
 	
+	public static final String COUNT = "count";
+	
 	public static final String GET_LIST = "getList";
 	
 	public static final String INSERT = "insert";
@@ -41,7 +43,7 @@ public class MapperTagReources {
 	public static final String MAPPER_UPDATE_IF= "<if test=\"%s != null and %s !='' \">%s = #{%s},</if>";
 	
 	
-	//java data type
+	//java return data type
 	public static final String INTEGER = "Integer";
 
 	public static final String INT = "int";
@@ -55,6 +57,8 @@ public class MapperTagReources {
 	
 	//sql
 	public static final String SQL_SELECT = "SELECT %s FROM %s <where>%s</where>";
+	
+	public static final String SQL_SELECT_COUNT = "SELECT COUNT(1) FROM %s <where>%s</where>";
 	
 	public static final String SQL_INSERT = "INSERT INTO %s <set>%s</set>";
 	

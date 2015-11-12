@@ -20,6 +20,8 @@ public class Page {
 	private Integer lastPage;
 
 	private Integer nextPage;
+	
+	List<Object> data;
 
 	public Page() {
 
@@ -27,21 +29,18 @@ public class Page {
 
 	/**
 	 * 
-	 * @param choosePage
-	 *            当前页
-	 * @param pageSize
-	 *            每一页的记录数
-	 * @param total
-	 *            总共的记录数
-	 * @param navigateTotal
-	 *            导航页的记录数
+	 * @param choosePage 当前页
+	 * @param pageSize 每一页的记录数
+	 * @param total  总共的记录数
+	 * @param navigateTotal 导航页的记录数
 	 * @throws NumberInputException
 	 * @throws OddEvenException
 	 */
-	public Page(int choosePage, int pageSize, int total, int navigateTotal)
+	public Page(int choosePage, int pageSize, int total, int navigateTotal,List<Object> data)
 			throws Exception {
 		this.choosePage = choosePage;
 		this.pageSize = pageSize;
+		this.data = data;
 		this.total = total;
 		int result = total / pageSize;
 		if (total % pageSize > 0) {
@@ -154,6 +153,21 @@ public class Page {
 	public void setNextPage(Integer nextPage) {
 		this.nextPage = nextPage;
 	}
+
+	public List<Object> getData() {
+		return data;
+	}
+
+	public void setData(List<Object> data) {
+		this.data = data;
+	}
+	
+	public static void main(String[] args) {
+		double result = 10.0 / 3;
+		System.out.println((int)Math.ceil(result));
+	}
+	
+	
 	
 	
 }
