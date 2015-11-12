@@ -1,7 +1,6 @@
 package com.inng.hope.base;
 
 import java.util.List;
-import java.util.Map;
 
 import com.inng.hope.framework.util.ParamsMap;
 

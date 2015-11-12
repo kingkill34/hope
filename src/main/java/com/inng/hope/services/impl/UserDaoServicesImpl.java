@@ -56,8 +56,8 @@ public class UserDaoServicesImpl extends ResultObject implements UserDaoServices
 
 	@Override
 	public Integer delById(Integer id) {
-		ParamsMap paramsMap = new ParamsMap("id", id);
-		return userDao.delete(paramsMap);
+		ParamsMap params = new ParamsMap("id", id);
+		return userDao.delete(params);
 	}
 
 	@Override
