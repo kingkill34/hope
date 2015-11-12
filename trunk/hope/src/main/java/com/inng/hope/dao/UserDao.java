@@ -2,10 +2,10 @@ package com.inng.hope.dao;
 
 import com.inng.hope.base.BaseMapper;
 import com.inng.hope.entity.User;
-import com.inng.hope.framework.mybatis.annotation.Entity;
+import com.inng.hope.framework.mybatis.annotation.Table;
 
 
-@Entity("user")
+@Table("user")
 public interface UserDao extends BaseMapper<User> {
 
 

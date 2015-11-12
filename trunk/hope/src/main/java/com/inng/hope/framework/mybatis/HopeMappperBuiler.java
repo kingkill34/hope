@@ -12,7 +12,7 @@ import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 import org.springframework.util.StringUtils;
 
-import com.inng.hope.framework.mybatis.annotation.Entity;
+import com.inng.hope.framework.mybatis.annotation.Table;
 
 public class HopeMappperBuiler {
 
@@ -28,17 +28,21 @@ public class HopeMappperBuiler {
 			// 读取mapper namespace
 			String namespace = root.attributeValue("namespace");
 			Class daoClz = Class.forName(namespace);
-			Entity annotation = (Entity) daoClz.getAnnotation(Entity.class);
+			Table annotation = (Table) daoClz.getAnnotation(Table.class);
 			if (annotation != null) {
 				// 获取Dao
 				String entityClzName = annotation.value();
 				Class entityClz = typeAliasRegistry.resolveAlias(entityClzName);
 
-				bulidGet(root, entityClz.getDeclaredFields(), entityClzName);
-				bulidGetList(root, entityClz.getDeclaredFields(), entityClzName);
-				buildInsert(root, entityClz.getDeclaredFields(),entityClzName);
-				buildDelete(root, entityClz.getDeclaredFields(), entityClzName);
-				buildUpdate(root, entityClz.getDeclaredFields(), entityClzName);
+				Field[] fields = entityClz.getDeclaredFields();
+				
+				//增加单表增删查改
+				bulidGet(root, fields, entityClzName);
+				bulidGetList(root, fields, entityClzName);
+				buildInsert(root, fields,entityClzName);
+				buildDelete(root, fields, entityClzName);
+				buildUpdate(root, fields, entityClzName);
+				buildCount(root, fields, entityClzName);
 			}
 			inputStream = new ByteArrayInputStream(StringEscapeUtils.unescapeXml(document.asXML()).getBytes("utf-8"));
 
@@ -80,6 +84,26 @@ public class HopeMappperBuiler {
 
 		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_SELECT);
 		setElementAttr(element, id, MapperTagReources.PARAMS_MAP, tableName, context);
+	}
+	
+	
+	
+	private void buildCount(Element root, Field[] fields, String tableName) {
+		StringBuffer where = new StringBuffer();
+
+		int fieldsLength = fields.length;
+		for (int i = 0; i < fieldsLength; i++) {
+			Field field = fields[i];
+			String fieldName = field.getName();
+			String operation = "params.operation" + fieldName;
+			String whereFieldName = "params.where"+ fieldName;
+			where.append(String.format(MapperTagReources.MAPPER_WHERE_IF, whereFieldName, whereFieldName, fieldName, operation,whereFieldName));
+		}
+
+		String context = String.format(MapperTagReources.SQL_SELECT_COUNT, tableName, where.toString());
+
+		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_SELECT);
+		setElementAttr(element, MapperTagReources.COUNT, MapperTagReources.PARAMS_MAP, MapperTagReources.INTEGER, context);
 	}
 
 	private void buildInsert(Element root, Field[] fields, String tableName) {

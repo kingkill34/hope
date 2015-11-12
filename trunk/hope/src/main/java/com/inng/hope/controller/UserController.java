@@ -17,9 +17,9 @@ public class UserController {
 	@Resource(name = "userDaoServicesImpl")
 	private UserDaoServices userDaoServices;
 
-	// @RequestMapping("main")
+	@RequestMapping("/index.do")
 	public String main() {
-		return "main";
+		return "index";
 	}
 
 	@RequestMapping

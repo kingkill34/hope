@@ -11,11 +11,10 @@ import com.inng.hope.entity.User;
 import com.inng.hope.exception.user.UserNotExits;
 import com.inng.hope.exception.user.UserOrPasswordError;
 import com.inng.hope.framework.util.ParamsMap;
-import com.inng.hope.result.ResultObject;
 import com.inng.hope.services.UserDaoServices;
 
 @Service(value = "userDaoServicesImpl")
-public class UserDaoServicesImpl extends ResultObject implements UserDaoServices {
+public class UserDaoServicesImpl implements UserDaoServices {
 
 	@Resource(name = "userDao")
 	private UserDao userDao;
@@ -23,7 +22,7 @@ public class UserDaoServicesImpl extends ResultObject implements UserDaoServices
 	@Override
 	public User login(String loginName, String loginPassword) {
 		ParamsMap paramsMap = new ParamsMap("loginName", loginName);
-		paramsMap.put("loginPassword",loginPassword);
+		paramsMap.put("loginPassword", loginPassword);
 		User user = userDao.get(paramsMap);
 		if (user == null) {
 			throw new UserNotExits();

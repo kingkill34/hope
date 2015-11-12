@@ -7,13 +7,30 @@ public class User {
 	 */
 	private Integer id;
 
+	/**
+	 * 昵称
+	 */
 	private String nickName;
 
+	/**
+	 *  登录账号
+	 */
 	private String loginName;
 
+	/**
+	 * 登录密码
+	 */
 	private String loginPassword;
 
+	/**
+	 * 用户类型
+	 */
 	private Integer type;
+
+	/**
+	 * 店铺编号
+	 */
+	private Integer shopId;
 
 	public Integer getId() {
 		return id;
@@ -53,6 +70,14 @@ public class User {
 
 	public void setType(Integer type) {
 		this.type = type;
+	}
+
+	public Integer getShopId() {
+		return shopId;
+	}
+
+	public void setShopId(Integer shopId) {
+		this.shopId = shopId;
 	}
 
 }
