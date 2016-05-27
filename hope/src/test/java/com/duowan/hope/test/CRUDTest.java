@@ -55,6 +55,15 @@ public class CRUDTest extends AbstractJUnit4SpringContextTests {
 	}
 
 	@Test
+	public void testOr() {
+
+		Params params = new Params();
+		params.or("group1", "loginName", Params.EQ_OPERATION, "mouzemin2");
+		List<User> users = userDao.getList(params);
+		System.out.println(users.size());
+	}
+
+	@Test
 	public void test3() throws Exception {
 		delAll(null);
 		addList(null);

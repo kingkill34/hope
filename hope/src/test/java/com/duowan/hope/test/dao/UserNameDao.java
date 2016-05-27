@@ -7,5 +7,4 @@ import com.duowan.hope.test.entity.UserName;
 @Entity(UserName.class)
 public interface UserNameDao extends BaseMapper<UserName> {
 
-	Integer testInsert(UserName userName);
 }

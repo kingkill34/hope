@@ -25,7 +25,7 @@ public class UserNameDaoTest extends AbstractJUnit4SpringContextTests {
 	public void testtt() throws Exception {
 		UserName userName = new UserName();
 		userName.setName("testUserName");
-		userNameDao.testInsert(userName);
+		//userNameDao.testInsert(userName);
 	}
 	
 	
