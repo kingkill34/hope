@@ -18,6 +18,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.StringUtils;
 
 import com.duowan.hope.mybatis.annotation.Entity;
+import com.duowan.hope.mybatis.annotation.Table;
 import com.duowan.hope.mybatis.database.DataBaseFieldInfo;
 import com.duowan.hope.mybatis.initparams.MapperParams;
 import com.duowan.hope.mybatis.initparams.SqlField;
@@ -116,10 +117,10 @@ public class HopeMappperBuiler {
 	private String getTableName(Element root) throws ClassNotFoundException {
 		String tableName = "";
 		String namespace = root.attributeValue(NAME_SPACE);
-		Class daoClz = Class.forName(namespace);
+		Class<?> daoClz = Class.forName(namespace);
 		Entity annotation = (Entity) daoClz.getAnnotation(Entity.class);
 		if (annotation != null) {
-			Class entityClz = annotation.value();
+			Class<?> entityClz = annotation.value();
 			Alias AliasClz = (Alias) entityClz.getAnnotation(Alias.class);
 			tableName = AliasClz.value();
 		}
@@ -144,14 +145,6 @@ public class HopeMappperBuiler {
 			buildUpdate(root, mapperParams, tableName);
 
 		}
-
-	}
-
-	private void buildBatchInsert() {
-
-	}
-
-	private void buildBatchInsertByTns() {
 
 	}
 

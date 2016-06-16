@@ -13,10 +13,8 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
-import org.apache.ibatis.builder.BuilderException;
 import org.apache.ibatis.builder.xml.XMLMapperBuilder;
 import org.apache.ibatis.executor.ErrorContext;
-import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.logging.Log;
 import org.apache.ibatis.logging.LogFactory;
 import org.apache.ibatis.logging.log4j.Log4jImpl;
@@ -464,7 +462,7 @@ public class HopeSqlSessionFactoryBean implements FactoryBean<SqlSessionFactory>
 		}
 
 		if (!isEmpty(this.mapperLocations)) {
-			HopeMappperBuiler hopeMappperBuiler = new HopeMappperBuiler();
+			HopeMappperBuiler2 hopeMappperBuiler = new HopeMappperBuiler2();
 			for (Resource mapperLocation : this.mapperLocations) {
 				if (mapperLocation == null) {
 					continue;
@@ -472,7 +470,7 @@ public class HopeSqlSessionFactoryBean implements FactoryBean<SqlSessionFactory>
 
 				try {
 
-					InputStream inputStream = hopeMappperBuiler.build(mapperLocation.getFile(), connection);
+					InputStream inputStream = hopeMappperBuiler.build(mapperLocation.getFile(), connection,configuration.getTypeAliasRegistry());
 					XMLMapperBuilder xmlMapperBuilder = new XMLMapperBuilder(inputStream, configuration, mapperLocation.toString(), configuration.getSqlFragments());
 					xmlMapperBuilder.parse();
 				} catch (Exception e) {

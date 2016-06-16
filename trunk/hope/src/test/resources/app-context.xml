@@ -43,7 +43,6 @@
 	<bean id="sqlSessionFactory" class="com.duowan.hope.mybatis.HopeSqlSessionFactoryBean">
 		<property name="dataSource" ref="dataSource" />
 		<property name="mapperLocations" value="classpath:com/duowan/hope/test/dao/*.xml" />
-		<property name="typeAliasesPackage" value="com.duowan.hope.test.entity" />
 	</bean>
 
 

@@ -3,8 +3,6 @@ package com.duowan.hope.mybatis;
 import java.io.InputStream;
 import java.io.Reader;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
 import java.util.Properties;
 
 import javax.sql.DataSource;
@@ -37,7 +35,6 @@ public class HopeXmlConfigBuilder extends BaseBuilder {
 	private boolean parsed;
 	private XPathParser parser;
 	private String environment;
-	private DataSource dataSource;
 	private Connection connection;
 
 	public HopeXmlConfigBuilder(Reader reader) {
@@ -303,7 +300,7 @@ public class HopeXmlConfigBuilder extends BaseBuilder {
 
 	private void mapperElement(XNode parent) throws Exception {
 		if (parent != null) {
-			HopeMappperBuiler hopeMapperBuild = new HopeMappperBuiler();
+			HopeMappperBuiler2 hopeMapperBuild = new HopeMappperBuiler2();
 			for (XNode child : parent.getChildren()) {
 				if ("package".equals(child.getName())) {
 					String mapperPackage = child.getStringAttribute("name");
@@ -314,7 +311,7 @@ public class HopeXmlConfigBuilder extends BaseBuilder {
 					String mapperClass = child.getStringAttribute("class");
 					if (resource != null && url == null && mapperClass == null) {
 						ErrorContext.instance().resource(resource);
-						InputStream inputStream = hopeMapperBuild.build(resource, connection);
+						InputStream inputStream = hopeMapperBuild.build(resource, connection,configuration.getTypeAliasRegistry());
 						XMLMapperBuilder mapperParser = new XMLMapperBuilder(inputStream, configuration, resource, configuration.getSqlFragments());
 						mapperParser.parse();
 					} else if (resource == null && url != null && mapperClass == null) {
