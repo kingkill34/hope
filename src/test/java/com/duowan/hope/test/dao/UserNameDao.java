@@ -1,10 +1,10 @@
 package com.duowan.hope.test.dao;
 
 import com.duowan.hope.BaseMapper;
-import com.duowan.hope.mybatis.annotation.Entity;
+import com.duowan.hope.mybatis.annotation.Table;
 import com.duowan.hope.test.entity.UserName;
 
-@Entity(UserName.class)
+@Table("user_name")
 public interface UserNameDao extends BaseMapper<UserName> {
 
 }

@@ -1,8 +1,6 @@
 package com.duowan.hope.test.entity;
 
-import org.apache.ibatis.type.Alias;
 
-@Alias("user")
 public class User {
 
 	/**
@@ -17,6 +15,10 @@ public class User {
 	private String loginPassword;
 
 	private Integer type;
+	
+	private String testField;
+	
+	
 
 	public Integer getId() {
 		return id;
@@ -57,5 +59,15 @@ public class User {
 	public void setType(Integer type) {
 		this.type = type;
 	}
+
+	public String getTestField() {
+		return testField;
+	}
+
+	public void setTestField(String testField) {
+		this.testField = testField;
+	}
+	
+	
 
 }
