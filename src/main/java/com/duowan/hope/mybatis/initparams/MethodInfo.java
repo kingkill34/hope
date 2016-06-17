@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.type.TypeAliasRegistry;
 import org.springframework.util.StringUtils;
 
@@ -55,7 +54,6 @@ public class MethodInfo {
 
 	static {
 
-		//
 		CONSTANT.add(Integer.class.getName());
 		CONSTANT.add(Double.class.getName());
 		CONSTANT.add(String.class.getName());
@@ -93,11 +91,7 @@ public class MethodInfo {
 				selectFields.append(fieldName + " as " + FieldUtil.toCamelCase(fieldName) + comma);
 			}
 		}
-
-		if (selectFields.length() > 0 && !StringUtils.isEmpty(groupBy)) {
-			selectFields.append(",");
-			selectFields.append(FieldUtil.toUnderlineName(groupBy) + " as " + groupBy);
-		}
+		setGroupBy(selectFields);
 		return selectFields.toString();
 	}
 
@@ -110,20 +104,71 @@ public class MethodInfo {
 		String fieldFormat = "count(" + distinctStr + " " + FieldUtil.toUnderlineName(value) + ")" + " as " + value;
 		selectFields.append(fieldFormat);
 
-		if (selectFields.length() > 0 && !StringUtils.isEmpty(groupBy)) {
-			selectFields.append(",");
-			selectFields.append(FieldUtil.toUnderlineName(groupBy) + " as " + groupBy);
+		setGroupBy(selectFields);
+
+		return selectFields.toString();
+	}
+
+	public String getInsertField() {
+		StringBuffer selectFields = new StringBuffer();
+		if (null != dataBaseFieldInfoList && dataBaseFieldInfoList.size() > 0) {
+			int fieldsLength = dataBaseFieldInfoList.size();
+			for (int i = 0; i < fieldsLength; i++) {
+				DataBaseFieldInfo dataBaseFieldInfo = dataBaseFieldInfoList.get(i);
+				String fieldName = dataBaseFieldInfo.getFieldName();
+				String comma = getComma(fieldsLength, i);
+				if (!dataBaseFieldInfo.isPrimaryKey() && !dataBaseFieldInfo.isAutoincrement()) {
+					selectFields.append(fieldName + comma);
+				}
+			}
 		}
 		return selectFields.toString();
 	}
 	
-	public String getInsertField(){
-		
-		return "";
-	}
 	
-	public String getInsertValue(){
-		return "";
+
+	public String getInsertValue() {
+		String ifNull = "<if test=\"#{%s} = null \"> %s</if>";
+		String ifNotNull = "<if test=\"#{%s} != null \"> %s</if>";
+		StringBuffer insertValue = new StringBuffer();
+
+		String fieldName = "";
+		for (int i = 0; i < parameters.length; i++) {
+			Parameter parameter = parameters[i];
+			fieldName = parameter.getName();
+
+			setTableInfoIndex(fieldName, i);
+
+			fieldName = FieldUtil.toUnderlineName(fieldName).toLowerCase();
+			if (columns.containsKey(fieldName)) {
+
+				DataBaseFieldInfo dataBaseFieldInfo = columns.get(fieldName);
+
+				if (dataBaseFieldInfo.isInsert()) {
+					String comma = getComma(parameters.length, i);
+					boolean isNullAble = dataBaseFieldInfo.isNullAble();
+					String defaultValue = dataBaseFieldInfo.getDefaultValue();
+					String insertField = getValue(parameter, i);
+
+					if (!isNullAble && !StringUtils.isEmpty(defaultValue)) {// 不允许空，有默认值
+						insertValue.append(String.format(ifNull, i, insertField + comma));
+						insertValue.append(String.format(ifNotNull, i, insertField + comma));
+					} else {// 插入字段值允许空 // 插入字段值不允许空，也没有默认值 //两种情况
+						insertValue.append(insertField + comma);
+					}
+
+				}
+			}
+		}
+		return insertValue.toString();
+
+	}
+
+	private void setGroupBy(StringBuffer selectFields) {
+		if (selectFields.length() > 0 && !StringUtils.isEmpty(groupBy)) {
+			selectFields.append(",");
+			selectFields.append(FieldUtil.toUnderlineName(groupBy) + " as " + groupBy);
+		}
 	}
 
 	private String getComma(Integer length, Integer i) {
@@ -186,15 +231,12 @@ public class MethodInfo {
 
 			setTableInfoIndex(fieldName, i);
 
-			String operation = getOperation(parameter);
-
 			fieldName = FieldUtil.toUnderlineName(fieldName).toLowerCase();
 			if (columns.containsKey(fieldName)) {
-				String index = "#{" + i + "}";
-				String appendSql = String.format(MapperTagReources.MAPPER_WHERE_IF_FOR_NUM, index, FieldUtil.toUnderlineName(fieldName), operation, i);
+				String whereValue = getValue(parameter, i);
+				String appendSql = "AND " + FieldUtil.toUnderlineName(fieldName) + whereValue;
 				where.append(appendSql);
 			}
-
 		}
 		return where.toString();
 	}
@@ -229,13 +271,25 @@ public class MethodInfo {
 	 * @param parameter
 	 * @return
 	 */
-	private String getOperation(Parameter parameter) {
-		String operation = "=";
+	private String getValue(Parameter parameter, int index) {
+		String value = "#{" + index + "}";
+		String whereValue = "=" + value;
 		OP op = parameter.getAnnotation(OP.class);
 		if (op != null) {
-			operation = op.value();
+			if (!op.value().equals("")) {
+				whereValue = op.value() + value;
+			}
+
+			if (op.isNull()) {
+				whereValue = " is null";
+			}
+
+			if (op.isNotNull()) {
+				whereValue = " is not null";
+			}
+
 		}
-		return operation;
+		return whereValue;
 	}
 
 	public String getReturnType() {
@@ -320,6 +374,8 @@ public class MethodInfo {
 				}
 
 			}
+		}else{
+			
 		}
 
 		if (!CONSTANT.contains(resultType)) {

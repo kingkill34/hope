@@ -20,4 +20,8 @@ public @interface OP {
 	 * @return
 	 */
 	String value() default "";
+
+	boolean isNull() default false;
+
+	boolean isNotNull() default false;
 }

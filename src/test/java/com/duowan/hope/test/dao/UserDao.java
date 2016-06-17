@@ -69,7 +69,7 @@ public interface UserDao {
 	// @HopeSelect
 	List<User> testOP(@OP("!=") Integer id);
 
-	// @HopeSelect
+	//@HopeSelect
 	List<User> testTSN(Integer id, Integer gameId);
 
 	@HopeInsert

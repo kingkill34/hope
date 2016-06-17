@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.ibatis.type.TypeAliasRegistry;
@@ -37,6 +38,7 @@ public class HopeMappperBuiler2 {
 	private static final String UTF_8 = "utf-8";
 	private static final String COLUMN_NAME = "COLUMN_NAME";
 	public static final Set<String> CONSTANT = new HashSet<String>();
+	private static Set<String> PRIMARY_KEY = new HashSet<>();
 
 	public InputStream build(String resource, Connection connection, TypeAliasRegistry typeAliasRegistry) {
 		this.typeAliasRegistry = typeAliasRegistry;
@@ -115,6 +117,10 @@ public class HopeMappperBuiler2 {
 		if (annotation == null) {
 			annotation = method.getAnnotation(HopeCount.class);
 		}
+		
+		if(annotation==null){
+			annotation =  method.getAnnotation(HopeInsert.class);
+		}
 		return annotation;
 	}
 
@@ -141,8 +147,7 @@ public class HopeMappperBuiler2 {
 					buildCount(methodInfo, root);
 					break;
 				}
-				
-				
+
 				// build insert
 				if (methodInfo.getType().equals(HopeInsert.class.getSimpleName())) {
 					buildInsert(methodInfo, root);
@@ -153,21 +158,18 @@ public class HopeMappperBuiler2 {
 		}
 
 	}
-	
-	
+
 	private void buildInsert(MethodInfo methodInfo, Element root) {
 
-		String insertField = methodInfo.getInsertValue();
+		String insertField = methodInfo.getInsertField();
 		String insertValue = methodInfo.getInsertValue();
 		String tableName = methodInfo.getTableName();
 		String tableSuffix = methodInfo.getTableSuffix();
 
-		String context = String.format(MapperTagReources.SQL_INSERT, tableName,tableSuffix, insertField,insertValue);
+		String context = String.format(MapperTagReources.SQL_INSERT, tableName, tableSuffix, insertField, insertValue);
 		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_INSERT);
 		setElementAttr(element, methodInfo.getId(), null, methodInfo.getReturnType(), context);
 	}
-
-	
 
 	private void buildCount(MethodInfo methodInfo, Element root) {
 
@@ -178,7 +180,7 @@ public class HopeMappperBuiler2 {
 		String tableName = methodInfo.getTableName();
 		String tableSuffix = methodInfo.getTableSuffix();
 
-		String context = String.format(MapperTagReources.SQL_SELECT, selectFields, tableName,tableSuffix, where, groupBy, orderBy);
+		String context = String.format(MapperTagReources.SQL_SELECT, selectFields, tableName, tableSuffix, where, groupBy, orderBy);
 		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_SELECT);
 		setElementAttr(element, methodInfo.getId(), null, methodInfo.getReturnType(), context);
 	}
@@ -192,7 +194,7 @@ public class HopeMappperBuiler2 {
 		String tableName = methodInfo.getTableName();
 		String tableSuffix = methodInfo.getTableSuffix();
 
-		String sql = String.format(MapperTagReources.SQL_SELECT, selectFields, tableName,tableSuffix, where, groupBy, orderBy);
+		String sql = String.format(MapperTagReources.SQL_SELECT, selectFields, tableName, tableSuffix, where, groupBy, orderBy);
 		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_SELECT);
 		setElementAttr(element, methodInfo.getId(), null, methodInfo.getReturnType(), sql);
 	}
@@ -206,16 +208,37 @@ public class HopeMappperBuiler2 {
 		return tableInfo;
 	}
 
-	private Map<String, DataBaseFieldInfo> getTableColumn(Connection connection, String tableName) {
-		Map<String, DataBaseFieldInfo> columns = new HashMap<>();
+	private TreeMap<String, DataBaseFieldInfo> getTableColumn(Connection connection, String tableName) {
+		TreeMap<String, DataBaseFieldInfo> columns = new TreeMap<>();
 		String columnName = "";
+		String typeName = "";
+		String nullAble = "";
+		String defaultValue = "";
+		String autoincrement = "";
+		boolean isPrimaryKey = false;
+
 		try {
 			DatabaseMetaData databaseMetaData = connection.getMetaData();
+			ResultSet primaryKeys = databaseMetaData.getPrimaryKeys(null, null, tableName);
+			while (primaryKeys.next()) {
+				PRIMARY_KEY.add(primaryKeys.getString(COLUMN_NAME).toLowerCase());
+			}
 			ResultSet resultSet = databaseMetaData.getColumns(null, null, tableName, "%");
 			while (resultSet.next()) {
 				columnName = resultSet.getString(COLUMN_NAME).toLowerCase();
-				DataBaseFieldInfo dataBaseFieldInfo = new DataBaseFieldInfo(columnName, resultSet.getString("TYPE_NAME"));
+				typeName = resultSet.getString("TYPE_NAME");
+				nullAble = resultSet.getString("IS_NULLABLE"); // 是否允许NULL
+				defaultValue = resultSet.getString("COLUMN_DEF"); // 字段默认值
+				autoincrement = resultSet.getString("IS_AUTOINCREMENT"); // 是否自增长
+
+				// 是否为主见
+				if (PRIMARY_KEY.contains(columnName)) {
+					isPrimaryKey = true;
+				}
+
+				DataBaseFieldInfo dataBaseFieldInfo = new DataBaseFieldInfo(columnName, typeName, nullAble, defaultValue, autoincrement, isPrimaryKey);
 				columns.put(columnName, dataBaseFieldInfo);
+
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -49,12 +49,16 @@ public class MapperTagReources {
 	public static final String MAPPER_WHERE_IF = "<if test=\"%s != null and %s !='' \"> AND %s ${%s} #{%s}</if>";
 
 	public static final String MAPPER_WHERE_IF_FOR_NUM = "<if test=\"%s != null \"> AND %s %s #{%s}</if>";
-	
+
 	public static final String MAPPER_TABLE_SUFFIX = "<if test=\"%s != null \">%s</if>";
 
 	public static final String MAPPER_UPDATE_IF = "<if test=\"%s != null and %s !='' \">%s = #{%s},</if>";
 
 	public static final String MAPPER_UPDATE_IF_FOR_NUM = "<if test=\"%s != null \">%s = #{%s},</if>";
+
+	
+	
+	public static final String MAPPER_WHERE = " AND %s %s";
 
 	// java data type
 	public static final String INTEGER = "Integer";
@@ -67,18 +71,15 @@ public class MapperTagReources {
 
 	// sql
 	public static final String SQL_SELECT = "SELECT %s FROM <trim suffix='' suffixOverrides=' '>%s%s</trim> <where>%s</where> %s %s";
-	public static final String SQL_INSERT = "INSERT INTO <trim suffix='' suffixOverrides=' '>%s%s</trim> (<trim suffixOverrides=\",\"> %s</trim>) VALUES(<trim suffixOverrides=\",\">%s</trim>)";
+	public static final String SQL_INSERT = "INSERT INTO <trim suffix='' suffixOverrides=' '>%s%s</trim> (<trim suffixOverrides=\",\">%s</trim>) VALUES(<trim suffixOverrides=\",\">%s</trim>)";
 
-	//抛弃
+	// 抛弃
 	public static final String SQL_SELECT_DISTINCT_COUNT = "SELECT count(distinct %s) FROM %s <where>%s</where>";
-	
-	
-
 
 	public static final String SQL_INSERT_BY_TABLENAME_SUFFIXES = "INSERT INTO %s${tableNameSuffixes} (<trim suffixOverrides=\",\"> %s</trim>) VALUES(<trim suffixOverrides=\",\">%s</trim>)";
 
 	public static final String SQL_BATCH_INSERT = "INSERT INTO %s (<trim suffixOverrides=\",\"> %s</trim>) VALUES(<trim suffixOverrides=\",\">%s</trim>)";
-	
+
 	public static final String SQL_DELETE = "DELETE FROM %s${tableNameSuffixes} <where>%s</where>";
 
 	public static final String SQL_UPDATE = "UPDATE %s${tableNameSuffixes} <set>%s</set> <where>%s</where>";
