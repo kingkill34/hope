@@ -231,7 +231,7 @@ public class HopeMappperBuiler2 {
 				defaultValue = resultSet.getString("COLUMN_DEF"); // 字段默认值
 				autoincrement = resultSet.getString("IS_AUTOINCREMENT"); // 是否自增长
 
-				// 是否为主见
+				// 是否为主键
 				if (PRIMARY_KEY.contains(columnName)) {
 					isPrimaryKey = true;
 				}
