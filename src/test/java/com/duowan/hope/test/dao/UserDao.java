@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.duowan.hope.mybatis.annotation.HopeInsert;
-import com.duowan.hope.mybatis.annotation.HopeSelect;
 import com.duowan.hope.mybatis.annotation.OP;
 import com.duowan.hope.mybatis.annotation.Table;
 import com.duowan.hope.test.entity.User;

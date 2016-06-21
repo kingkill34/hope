@@ -124,8 +124,6 @@ public class MethodInfo {
 		}
 		return selectFields.toString();
 	}
-	
-	
 
 	public String getInsertValue() {
 		String ifNull = "<if test=\"#{%s} = null \"> %s</if>";
@@ -359,28 +357,27 @@ public class MethodInfo {
 		// 如果是MAP转换成hashmap
 		if (resultType.equals(Map.class.getName())) {
 			resultType = HashMap.class.getName();
-
-			dataBaseFieldInfoList = new ArrayList<DataBaseFieldInfo>();
-			// 如果返回值为MAP,并且没有查找字段,默认返回这个表的所有字段
-			if (StringUtils.isEmpty(value)) {
-				for (Map.Entry<String, DataBaseFieldInfo> entry : columns.entrySet()) {
-					dataBaseFieldInfoList.add(entry.getValue());
-				}
-			} else {
+			
+			//如果VALUE不为空
+			if (!StringUtils.isEmpty(value)) {
+				dataBaseFieldInfoList = new ArrayList<DataBaseFieldInfo>();
 				String[] v = value.split(",");
 				for (String fieldName : v) {
 					fieldName = FieldUtil.toUnderlineName(fieldName);
 					dataBaseFieldInfoList.add(columns.get(fieldName));
 				}
-
 			}
-		}else{
-			
+
 		}
 
 		if (!CONSTANT.contains(resultType)) {
 			Class<?> clz = registerAlias(resultType);
 			dataBaseFieldInfoList = getColumns(clz);
+		} else {
+			dataBaseFieldInfoList = new ArrayList<DataBaseFieldInfo>();
+			for (Map.Entry<String, DataBaseFieldInfo> entry : columns.entrySet()) {
+				dataBaseFieldInfoList.add(entry.getValue());
+			}
 		}
 
 		return resultType;
