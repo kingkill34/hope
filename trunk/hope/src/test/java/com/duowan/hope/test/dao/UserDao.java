@@ -8,7 +8,7 @@ import com.duowan.hope.mybatis.annotation.OP;
 import com.duowan.hope.mybatis.annotation.Table;
 import com.duowan.hope.test.entity.User;
 
-@Table(value = "user", tableSuffix = "gameId")
+@Table(value = User.class, tableSuffix = "gameId")
 public interface UserDao {
 
 	// 返回单个ENTITY
@@ -68,19 +68,19 @@ public interface UserDao {
 	// @HopeSelect
 	List<User> testOP(@OP("!=") Integer id);
 
-	//@HopeSelect
+	// @HopeSelect
 	List<User> testTSN(Integer id, Integer gameId);
 
 	@HopeInsert
-	boolean insert(User user);
-	
-//	@HopeInsert
-//	Boolean insertByBoolean(User user);
-//	
-//	@HopeInsert
-//	Integer insertByInteger(User user);
-//
-//	@HopeInsert
-//	Integer insertByInt(User user);
+	boolean insert(List<User> user);
+
+	// @HopeInsert
+	// Boolean insertByBoolean(User user);
+	//
+	// @HopeInsert
+	// Integer insertByInteger(User user);
+	//
+	// @HopeInsert
+	// Integer insertByInt(User user);
 
 }
