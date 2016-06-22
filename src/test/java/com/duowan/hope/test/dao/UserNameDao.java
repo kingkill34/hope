@@ -4,7 +4,7 @@ import com.duowan.hope.BaseMapper;
 import com.duowan.hope.mybatis.annotation.Table;
 import com.duowan.hope.test.entity.UserName;
 
-@Table("user_name")
+@Table(UserName.class)
 public interface UserNameDao extends BaseMapper<UserName> {
 
 }

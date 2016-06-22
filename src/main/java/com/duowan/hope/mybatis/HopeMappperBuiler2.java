@@ -117,9 +117,9 @@ public class HopeMappperBuiler2 {
 		if (annotation == null) {
 			annotation = method.getAnnotation(HopeCount.class);
 		}
-		
-		if(annotation==null){
-			annotation =  method.getAnnotation(HopeInsert.class);
+
+		if (annotation == null) {
+			annotation = method.getAnnotation(HopeInsert.class);
 		}
 		return annotation;
 	}
@@ -224,7 +224,9 @@ public class HopeMappperBuiler2 {
 				PRIMARY_KEY.add(primaryKeys.getString(COLUMN_NAME).toLowerCase());
 			}
 			ResultSet resultSet = databaseMetaData.getColumns(null, null, tableName, "%");
+			int index = 0;
 			while (resultSet.next()) {
+				isPrimaryKey = false;
 				columnName = resultSet.getString(COLUMN_NAME).toLowerCase();
 				typeName = resultSet.getString("TYPE_NAME");
 				nullAble = resultSet.getString("IS_NULLABLE"); // 是否允许NULL
@@ -236,8 +238,9 @@ public class HopeMappperBuiler2 {
 					isPrimaryKey = true;
 				}
 
-				DataBaseFieldInfo dataBaseFieldInfo = new DataBaseFieldInfo(columnName, typeName, nullAble, defaultValue, autoincrement, isPrimaryKey);
+				DataBaseFieldInfo dataBaseFieldInfo = new DataBaseFieldInfo(columnName, typeName, nullAble, defaultValue, autoincrement, isPrimaryKey, index);
 				columns.put(columnName, dataBaseFieldInfo);
+				index++;
 
 			}
 		} catch (Exception e) {

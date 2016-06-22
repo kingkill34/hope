@@ -10,13 +10,19 @@ public class TableInfo {
 
 	private String tableSeparator;
 
+	private String typeName;
+
+	private Class<?> clz;
+
 	private int index = -1;
 
 	public TableInfo() {
 	}
 
 	public TableInfo(Table table) {
-		this.tableName = table.value();
+		this.clz = table.value();
+		this.typeName = this.clz.getName();
+		this.tableName = this.clz.getSimpleName();
 		this.tableSuffix = table.tableSuffix();
 		this.tableSeparator = table.tableSeparator();
 	}
@@ -51,6 +57,22 @@ public class TableInfo {
 
 	public void setIndex(int index) {
 		this.index = index;
+	}
+
+	public String getTypeName() {
+		return typeName;
+	}
+
+	public void setTypeName(String typeName) {
+		this.typeName = typeName;
+	}
+
+	public Class<?> getClz() {
+		return clz;
+	}
+
+	public void setClz(Class<?> clz) {
+		this.clz = clz;
 	}
 
 }
