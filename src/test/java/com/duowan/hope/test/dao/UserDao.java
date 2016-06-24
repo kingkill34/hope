@@ -71,8 +71,14 @@ public interface UserDao {
 	// @HopeSelect
 	List<User> testTSN(Integer id, Integer gameId);
 
-	@HopeInsert
-	boolean insert(List<User> user);
+	//@HopeInsert
+	Integer insert(User user);
+
+	//@HopeInsert
+	Integer insertList(List<User> user);
+
+	// @HopeInsert
+	// boolean insert(List<User> user);
 
 	// @HopeInsert
 	// Boolean insertByBoolean(User user);

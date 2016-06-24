@@ -7,9 +7,12 @@ import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.ibatis.type.TypeAliasRegistry;
 import org.springframework.util.StringUtils;
@@ -18,11 +21,16 @@ import com.duowan.hope.mybatis.MapperTagReources;
 import com.duowan.hope.mybatis.annotation.OP;
 import com.duowan.hope.mybatis.database.DataBaseFieldInfo;
 import com.duowan.hope.mybatis.util.FieldUtil;
+import com.duowan.hope.test.dao.UserDao;
+import com.duowan.hope.test.dao.UserNameDao;
+import com.duowan.hope.test.entity.User;
 
 public class MethodInfo {
 
 	private TypeAliasRegistry typeAliasRegistry; // mybatis 返回实体类注册
-	public static final Set<String> CONSTANT = new HashSet<String>(); // 基础类型
+	public static final Set<String> BASE_TYPE = new HashSet<String>(); // 基础类型
+
+	public static final Map<String, String> COLLECTION_TYPE = new HashMap<String, String>(); // 基础类型
 
 	private List<DataBaseFieldInfo> dataBaseFieldInfoList; // 组装SQL需要用到的字段
 
@@ -42,20 +50,35 @@ public class MethodInfo {
 
 	private String groupBy;
 
+	private String paramterType;
+
+	private boolean distinct;
+
+	private boolean isVoOrPo;
+
+	boolean isCollection;
+
 	// 表名相关信息
 	private TableInfo tableInfo;
 
-	// private List<Parameter> parameters;
-
 	static {
-		CONSTANT.add(Integer.class.getName());
-		CONSTANT.add(Double.class.getName());
-		CONSTANT.add(String.class.getName());
-		CONSTANT.add(HashMap.class.getName());
-		CONSTANT.add(Boolean.class.getName());
-		CONSTANT.add(double.class.getName());
-		CONSTANT.add(int.class.getName());
-		CONSTANT.add(boolean.class.getName());
+		BASE_TYPE.add(Integer.class.getName());
+		BASE_TYPE.add(Double.class.getName());
+		BASE_TYPE.add(String.class.getName());
+		BASE_TYPE.add(HashMap.class.getName());
+		BASE_TYPE.add(Boolean.class.getName());
+		BASE_TYPE.add(double.class.getName());
+		BASE_TYPE.add(int.class.getName());
+		BASE_TYPE.add(boolean.class.getName());
+
+		COLLECTION_TYPE.put(List.class.getName(), List.class.getName());
+		COLLECTION_TYPE.put(ArrayList.class.getName(), List.class.getName());
+		COLLECTION_TYPE.put(LinkedList.class.getName(), List.class.getName());
+		COLLECTION_TYPE.put(Map.class.getName(), Map.class.getName());
+		COLLECTION_TYPE.put(HashMap.class.getName(), Map.class.getName());
+		COLLECTION_TYPE.put(LinkedHashMap.class.getName(), Map.class.getName());
+		COLLECTION_TYPE.put(TreeMap.class.getName(), Map.class.getName());
+
 	}
 
 	/**
@@ -69,13 +92,36 @@ public class MethodInfo {
 	 */
 	public MethodInfo(Method method, Annotation annotation, Map<String, DataBaseFieldInfo> columns, TypeAliasRegistry typeAliasRegistry, TableInfo tableInfo) {
 		this.typeAliasRegistry = typeAliasRegistry;
+		this.tableInfo = tableInfo;
+		this.id = method.getName();
 		setAnnotationInfo(annotation);
 		setType(annotation);
-		setDataBaseFieldInfoList(method, columns);
-		this.id = method.getName();
 		this.returnType = getReturnType(method);
-		// table info
-		this.tableInfo = tableInfo;
+		setDataBaseFieldInfoList(method, columns);
+	}
+
+	private RegisterAliasInfo setParamterType(String typeName) {
+
+		RegisterAliasInfo RegisterAliasInfo = null;
+
+		String paramPrefix = getParamterType(typeName);
+		// 如果是集合
+		if (COLLECTION_TYPE.containsKey(paramPrefix)) {
+			isCollection = true;
+			this.paramterType = COLLECTION_TYPE.get(paramPrefix);
+		}
+
+		// 如果不是基础类型,那么进行注册，并获取参数类型
+		String paramSuffix = getGenericityName(typeName);
+		if (!BASE_TYPE.contains(paramSuffix)) {
+			isVoOrPo = true;
+			RegisterAliasInfo = registerAlias(paramSuffix);
+			if (!isCollection) {
+				this.paramterType = RegisterAliasInfo.getName();
+			}
+		}
+		return RegisterAliasInfo;
+
 	}
 
 	/**
@@ -84,7 +130,6 @@ public class MethodInfo {
 	 * @param parameters
 	 */
 	private void setDataBaseFieldInfoList(Method method, Map<String, DataBaseFieldInfo> columns) {
-		boolean isEntity = false;
 		dataBaseFieldInfoList = new ArrayList<>();
 		Parameter[] parameters = method.getParameters();
 		Integer parametersLength = parameters == null ? 0 : parameters.length;
@@ -93,22 +138,28 @@ public class MethodInfo {
 		if (parametersLength == 1) {
 			// 获取参数类型
 			String typeName = parameters[0].getParameterizedType().getTypeName();
-			// 判断是否是LIST
-			if (typeName.startsWith(List.class.getName())) {
-				// 如果是list 获取泛型里面的参数类型
-				typeName = getGenericityName(typeName);
-			}
 
-			if (this.tableInfo.getTypeName().equals(typeName)) {
-				isEntity = true;
-				for (Map.Entry<String, DataBaseFieldInfo> entry : columns.entrySet()) {
-					dataBaseFieldInfoList.add(entry.getValue());
+			// 设置传入方法类型
+			RegisterAliasInfo registerAliasInfo = setParamterType(typeName);
+
+			// 如果是VO或者PO，把字段取出来当参数,
+			// 一般来说会用VO PO做参数的，只会是插入数据或者更新
+			// 取出对象的字段，和数据库中的字段进行对比，匹配的拿来做SQL的参数
+			if (isVoOrPo) {
+				Field[] fields = registerAliasInfo.getClz().getDeclaredFields();
+				for (Field field : fields) {
+					String underLineFieldName = FieldUtil.toUnderlineName(field.getName());
+					if (columns.containsKey(underLineFieldName)) {
+						DataBaseFieldInfo dataBaseFieldInfo = columns.get(underLineFieldName);
+						dataBaseFieldInfo.setVoOrPo(isVoOrPo);
+						dataBaseFieldInfoList.add(dataBaseFieldInfo);
+					}
 				}
 			}
 		}
 
-		// 如果不是实体类
-		if (isEntity == false) {
+		// 如果不是实体类,并且parameters ==0 or parameters.size>1
+		if (!isVoOrPo) {
 			for (Parameter parameter : parameters) {
 				String fieldName = parameter.getName();
 				OP op = parameter.getAnnotation(OP.class);
@@ -122,6 +173,11 @@ public class MethodInfo {
 		}
 	}
 
+	/**
+	 * 获取查询字段
+	 * 
+	 * @return
+	 */
 	public String getSelectFields() {
 		StringBuffer selectFields = new StringBuffer();
 		int fieldsLength = dataBaseFieldInfoList.size();
@@ -133,84 +189,109 @@ public class MethodInfo {
 		return selectFields.toString();
 	}
 
+	/**
+	 * 获取WHERE条件
+	 */
+	public String getWhere() {
+		StringBuffer where = new StringBuffer();
+		int fieldsLength = dataBaseFieldInfoList.size();
+		for (int i = 0; i < fieldsLength; i++) {
+			DataBaseFieldInfo dataBaseFieldInfo = dataBaseFieldInfoList.get(i);
+			setTableInfoIndex(dataBaseFieldInfo.getFieldNameCamelCase(), i); // 找到分表字段下标，进行标记
+			where.append(dataBaseFieldInfo.getWhereValue(fieldsLength, i));
+		}
+		return where.toString();
+	}
+
+	/**
+	 * 获取分表后缀
+	 * 
+	 * @return
+	 */
+	public String getTableSuffix() {
+		String tableSuffix = "";
+		Integer index = this.tableInfo.getIndex();
+		if (null != index && index > -1) {
+			String indexStr = "";
+			if (isVoOrPo) {
+				indexStr = "#{" + this.tableInfo.getTableSuffix() + "}";
+				tableSuffix = this.tableInfo.getTableSeparator() + "${" + this.tableInfo.getTableSuffix() + "}";
+			} else {
+				indexStr = "#{" + this.tableInfo.getIndex() + "}";
+				tableSuffix = this.tableInfo.getTableSeparator() + indexStr;
+			}
+
+			tableSuffix = String.format(MapperTagReources.MAPPER_TABLE_SUFFIX, indexStr, tableSuffix);
+		}
+		return tableSuffix;
+	}
+
+	/**
+	 * 获取count字段
+	 * 
+	 * @return
+	 */
 	public String getSelectCountFields() {
 		StringBuffer selectFields = new StringBuffer();
-		String distinctStr = "";
-		String fieldFormat = "count(" + distinctStr + " " + FieldUtil.toUnderlineName(value) + ")" + " as " + value;
-		selectFields.append(fieldFormat);
+		String fieldFormat = "";
 
+		// 如果VALUE为空，默认count(1)
+		if (StringUtils.isEmpty(value)) {
+			fieldFormat = "count(1) as `count`";
+		} else {
+			String distinctStr = "";
+			if (distinct) {
+				distinctStr = "distinct";
+			}
+			String[] values = this.value.split(",");
+			for (String v : values) {
+				fieldFormat = "count(" + distinctStr + " " + FieldUtil.toUnderlineName(v) + ")" + " as " + v;
+				selectFields.append(fieldFormat);
+			}
+		}
 		setGroupBy(selectFields);
-
 		return selectFields.toString();
 	}
 
+	/**
+	 * 获取插入字段
+	 * 
+	 * @return
+	 */
 	public String getInsertField() {
 		StringBuffer insertFields = new StringBuffer();
-		if (null != dataBaseFieldInfoList && dataBaseFieldInfoList.size() > 0) {
-			int fieldsLength = dataBaseFieldInfoList.size();
-			for (int i = 0; i < fieldsLength; i++) {
-				DataBaseFieldInfo dataBaseFieldInfo = dataBaseFieldInfoList.get(i);
-				if (dataBaseFieldInfo.isPrimaryKey() == false && dataBaseFieldInfo.isAutoincrement() == false) {
-					String fieldName = dataBaseFieldInfo.getFieldName();
-					String comma = getComma(fieldsLength, i);
-					insertFields.append(fieldName + comma);
-				}
-			}
+		int fieldsLength = dataBaseFieldInfoList.size();
+		for (int i = 0; i < fieldsLength; i++) {
+			DataBaseFieldInfo dataBaseFieldInfo = dataBaseFieldInfoList.get(i);
+			insertFields.append(dataBaseFieldInfo.getInsertField(fieldsLength, i));
 		}
 		return insertFields.toString();
 	}
 
+	/**
+	 * 获取插入值
+	 * 
+	 * @return
+	 */
 	public String getInsertValue() {
-		// String ifNull = "<if test=\"#{%s} = null \"> %s</if>";
-		// String ifNotNull = "<if test=\"#{%s} != null \"> %s</if>";
-		// StringBuffer insertValue = new StringBuffer();
-		//
-		// String fieldName = "";
-		//
-		// int parametersLength = parameters.size();
-		//
-		// if (parametersLength == 1 && isSameClzType(parameters.get(0))) {
-		// int fieldsLength = dataBaseFieldInfoList.size();
-		// for (int i = 0; i < fieldsLength; i++) {
-		// DataBaseFieldInfo dataBaseFieldInfo = dataBaseFieldInfoList.get(i);
-		// if (dataBaseFieldInfo.isPrimaryKey() == false &&
-		// dataBaseFieldInfo.isAutoincrement() == false) {
-		// fieldName = dataBaseFieldInfo.getFieldName();
-		// String comma = getComma(fieldsLength, i);
-		// }
-		// }
-		// }
-		//
-		// for (int i = 0; i < parametersLength; i++) {
-		// Parameter parameter = parameters.get(i);
-		// fieldName = parameter.getName();
-		//
-		// setTableInfoIndex(fieldName, i);
-		//
-		// fieldName = FieldUtil.toUnderlineName(fieldName).toLowerCase();
-		// if (columns.containsKey(fieldName)) {
-		//
-		// DataBaseFieldInfo dataBaseFieldInfo = columns.get(fieldName);
-		//
-		// if (dataBaseFieldInfo.isInsert()) {
-		//
-		// boolean isNullAble = dataBaseFieldInfo.isNullAble();
-		// String defaultValue = dataBaseFieldInfo.getDefaultValue();
-		// String insertField = getWhereValue(parameter, i, parametersLength,
-		// i);
-		//
-		// if (!isNullAble && !StringUtils.isEmpty(defaultValue)) {// 不允许空，有默认值
-		// insertValue.append(String.format(ifNull, i, insertField));
-		// insertValue.append(String.format(ifNotNull, i, insertField));
-		// } else {// 插入字段值允许空 // 插入字段值不允许空，也没有默认值 //两种情况
-		// insertValue.append(insertField);
-		// }
-		//
-		// }
-		// }
-		// }
-		// return insertValue.toString();
-		return "";
+		StringBuffer insertValue = new StringBuffer();
+		int fieldsLength = dataBaseFieldInfoList.size();
+		if (fieldsLength > 0) {
+			insertValue.append("(");
+			for (int i = 0; i < fieldsLength; i++) {
+				DataBaseFieldInfo dataBaseFieldInfo = dataBaseFieldInfoList.get(i);
+				setTableInfoIndex(dataBaseFieldInfo.getFieldNameCamelCase(), i);
+				// 如果是集合，VALUE的填写方式不一样
+				if (isCollection) {
+					insertValue.append(dataBaseFieldInfo.getBatchInsertValue(fieldsLength, i));
+				} else {
+					insertValue.append(dataBaseFieldInfo.getInsertValue(fieldsLength, i));
+				}
+
+			}
+			insertValue.append(")");
+		}
+		return insertValue.toString();
 
 	}
 
@@ -231,34 +312,6 @@ public class MethodInfo {
 		}
 	}
 
-	/**
-	 * 获取操作符
-	 * 
-	 * @param parameter
-	 * @return
-	 */
-	private String getWhereValue(Parameter parameter, Object field, Integer fieldLength, Integer i) {
-		String comma = getComma(fieldLength, i);
-
-		String value = "#{" + field + "}" + comma;
-		String whereValue = "=" + value;
-		OP op = parameter.getAnnotation(OP.class);
-		if (op != null) {
-			if (!op.value().equals("")) {
-				whereValue = op.value() + value;
-			}
-
-			if (op.isNull()) {
-				whereValue = " is null";
-			}
-
-			if (op.isNotNull()) {
-				whereValue = " is not null";
-			}
-		}
-		return whereValue;
-	}
-
 	private void setAnnotationInfo(Annotation annotation) {
 		if (null != annotation) {
 			Method[] methods = annotation.annotationType().getMethods();
@@ -277,6 +330,9 @@ public class MethodInfo {
 					case "orderByDESC":
 						this.orderByDESC = method.invoke(annotation, null).toString();
 						break;
+					case "distinct":
+						this.distinct = (boolean) method.invoke(annotation, null);
+						break;
 					}
 
 				} catch (Exception e) {
@@ -286,37 +342,6 @@ public class MethodInfo {
 			}
 
 		}
-	}
-
-	public String getWhere() {
-		StringBuffer where = new StringBuffer();
-
-		String fieldName = "";
-		for (int i = 0; i < parameters.size(); i++) {
-			Parameter parameter = parameters.get(i);
-			fieldName = parameter.getName();
-
-			setTableInfoIndex(fieldName, i);
-
-			fieldName = FieldUtil.toUnderlineName(fieldName).toLowerCase();
-			if (columns.containsKey(fieldName)) {
-				String whereValue = getWhereValue(parameter, i, null, null);
-				String appendSql = "AND " + FieldUtil.toUnderlineName(fieldName) + whereValue;
-				where.append(appendSql);
-			}
-		}
-		return where.toString();
-	}
-
-	public String getTableSuffix() {
-		String tableSuffix = "";
-		Integer index = this.tableInfo.getIndex();
-		if (null != index && index > -1) {
-			String indexStr = "#{" + this.tableInfo.getIndex() + "}";
-			tableSuffix = this.tableInfo.getTableSeparator() + indexStr;
-			tableSuffix = String.format(MapperTagReources.MAPPER_TABLE_SUFFIX, indexStr, tableSuffix);
-		}
-		return tableSuffix;
 	}
 
 	/**
@@ -371,15 +396,23 @@ public class MethodInfo {
 		return dataBaseFieldInfoList;
 	}
 
-	private Class<?> registerAlias(String className) {
-		Class<?> clz = null;
+	/**
+	 * 向mybatis注册返回对象
+	 * 
+	 * @param className
+	 * @return
+	 */
+	private RegisterAliasInfo registerAlias(String className) {
+		RegisterAliasInfo registerAliasInfo = null;
 		try {
-			clz = Class.forName(className);
-			this.typeAliasRegistry.registerAlias(clz.getSimpleName(), clz);
+			Class<?> clz = Class.forName(className);
+			String registerAliasName = FieldUtil.toCamelCase(clz.getSimpleName());
+			registerAliasInfo = new RegisterAliasInfo(registerAliasName, clz);
+			this.typeAliasRegistry.registerAlias(registerAliasName, clz);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return clz;
+		return registerAliasInfo;
 	}
 
 	/**
@@ -405,23 +438,12 @@ public class MethodInfo {
 		if (resultType.equals(Map.class.getName())) {
 			resultType = HashMap.class.getName();
 		}
-		return resultType;
-	}
 
-	private List<DataBaseFieldInfo> getColumns(Class<?> clz) {
-		String fieldName = "";
-		List<DataBaseFieldInfo> list = null;
-		Field[] fields = clz.getDeclaredFields();
-		if (null != fields && fields.length > 0) {
-			list = new ArrayList<DataBaseFieldInfo>();
-			for (Field field : fields) {
-				fieldName = FieldUtil.toUnderlineName(field.getName()).toLowerCase();
-				if (columns.containsKey(fieldName)) {
-					list.add(columns.get(fieldName));
-				}
-			}
+		// 如果不是基础类型，认为是VO或者是PO。进行注册
+		if (!BASE_TYPE.contains(resultType)) {
+			registerAlias(resultType);
 		}
-		return list;
+		return resultType;
 	}
 
 	private String getGenericityName(String genericity) {
@@ -434,8 +456,44 @@ public class MethodInfo {
 		return genericityName;
 	}
 
+	public static String getParamterType(String genericity) {
+		String genericityName = genericity;
+		int startIndex = genericity.indexOf("<");
+		if (-1 != startIndex) {
+			genericityName = genericity.substring(0, startIndex);
+		}
+		return genericityName;
+	}
+
 	public String getTableName() {
 		return this.tableInfo.getTableName();
+	}
+
+	public String getParamterType() {
+		return paramterType;
+	}
+
+	public boolean isCollection() {
+		return isCollection;
+	}
+
+	class RegisterAliasInfo {
+		private String name;
+		private Class<?> clz;
+
+		public RegisterAliasInfo(String name, Class<?> clz) {
+			this.name = name;
+			this.clz = clz;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public Class<?> getClz() {
+			return clz;
+		}
+
 	}
 
 }

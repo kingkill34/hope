@@ -68,6 +68,9 @@ public class FieldUtil {
 		s = toCamelCase(s);
 		return s.substring(0, 1).toUpperCase() + s.substring(1);
 	}
+	
+	
+	
 
 	public static void main(String[] args) {
 		System.out.println(toUnderlineName("ISOCertifiedStaff"));
@@ -76,6 +79,7 @@ public class FieldUtil {
 		System.out.println(toCamelCase("iso_certified_staff"));
 		System.out.println(toCamelCase("certified_staff"));
 		System.out.println(toCamelCase("user_id"));
+		System.out.println(toCamelCase("User"));
 	}
 
 }

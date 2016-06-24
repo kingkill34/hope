@@ -1,6 +1,5 @@
 package com.duowan.hope.test.entity;
 
-
 public class User {
 
 	/**
@@ -15,10 +14,10 @@ public class User {
 	private String loginPassword;
 
 	private Integer type;
-	
+
 	private String testField;
-	
-	
+
+	private String gameId;
 
 	public Integer getId() {
 		return id;
@@ -67,7 +66,13 @@ public class User {
 	public void setTestField(String testField) {
 		this.testField = testField;
 	}
-	
-	
+
+	public String getGameId() {
+		return gameId;
+	}
+
+	public void setGameId(String gameId) {
+		this.gameId = gameId;
+	}
 
 }

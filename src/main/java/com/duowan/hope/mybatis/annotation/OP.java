@@ -25,5 +25,4 @@ public @interface OP {
 
 	boolean isNotNull() default false;
 
-	boolean isDistinct() default false;
 }

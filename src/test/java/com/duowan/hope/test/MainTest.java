@@ -1,5 +1,6 @@
 package com.duowan.hope.test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -146,7 +147,7 @@ public class MainTest extends AbstractJUnit4SpringContextTests {
 			System.out.println(user.getId());
 		}
 	}
-	
+
 	@Test
 	public void insert() {
 		User user = new User();
@@ -155,9 +156,26 @@ public class MainTest extends AbstractJUnit4SpringContextTests {
 		user.setLoginPassword("dddddd");
 		user.setNickName("frankie");
 		user.setType(1);
-		boolean result = userDao.insert(user);
+		user.setGameId("2022");
+		Integer result = userDao.insert(user);
 		System.out.println(result);
 	}
-	
+
+	@Test
+	public void insertList() {
+		List<User> list = new ArrayList<User>();
+		for (int i = 0; i < 3; i++) {
+			User user = new User();
+			user.setLoginName("mouzemin" + i);
+			user.setLoginPassword("dddddd");
+			user.setNickName("frankie" + i);
+			user.setType(1);
+			user.setGameId("2022");
+			list.add(user);
+		}
+
+		Integer result = userDao.insertList(list);
+		System.out.println(result);
+	}
 
 }
