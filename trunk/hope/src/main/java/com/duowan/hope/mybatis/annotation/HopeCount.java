@@ -17,4 +17,6 @@ public @interface HopeCount {
 
 	String groupBy() default "";
 
+	boolean distinct() default false;
+
 }

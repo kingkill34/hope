@@ -12,7 +12,7 @@ public @interface HopeSelect {
 	String value() default "";
 
 	String orderByASC() default "";
-	
+
 	String orderByDESC() default "";
 
 	String groupBy() default "";

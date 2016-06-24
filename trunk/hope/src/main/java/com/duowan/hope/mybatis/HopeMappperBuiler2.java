@@ -8,7 +8,6 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -166,9 +165,14 @@ public class HopeMappperBuiler2 {
 		String tableName = methodInfo.getTableName();
 		String tableSuffix = methodInfo.getTableSuffix();
 
-		String context = String.format(MapperTagReources.SQL_INSERT, tableName, tableSuffix, insertField, insertValue);
+		String formatStr = MapperTagReources.SQL_INSERT;
+		if (methodInfo.isCollection()) {
+			formatStr = MapperTagReources.SQL_BATCH_INSERT;
+		}
+
+		String context = String.format(formatStr, tableName, tableSuffix, insertField, insertValue);
 		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_INSERT);
-		setElementAttr(element, methodInfo.getId(), null, methodInfo.getReturnType(), context);
+		setElementAttr(element, methodInfo.getId(), methodInfo.getParamterType(), null, context);
 	}
 
 	private void buildCount(MethodInfo methodInfo, Element root) {

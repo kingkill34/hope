@@ -1,14 +1,17 @@
 package com.duowan.hope.mybatis.database;
 
+import org.springframework.util.StringUtils;
+
 import com.duowan.hope.mybatis.annotation.OP;
 import com.duowan.hope.mybatis.util.FieldUtil;
 
 public class DataBaseFieldInfo {
 
 	private static final String AS = " as ";
-	private static final String DISTINCT = "distinct";
+	private static final String AND = " AND ";
 
 	private String fieldName;
+	private String fieldNameCamelCase;
 	private String fieldType;
 	private String operation;
 	private String defaultValue;
@@ -19,9 +22,11 @@ public class DataBaseFieldInfo {
 	private boolean isDistinct = false;
 	private OP op;
 	private String specialField;
+	private boolean isVoOrPo;
 
 	public DataBaseFieldInfo(String fieldName, String fieldType, String nullAble, String defaultValue, String autoincrement, boolean isPrimaryKey, Integer index) {
 		this.fieldName = fieldName;
+		this.fieldNameCamelCase = FieldUtil.toCamelCase(fieldName);
 		this.fieldType = fieldType;
 		this.defaultValue = defaultValue;
 		this.isPrimaryKey = isPrimaryKey;
@@ -42,21 +47,99 @@ public class DataBaseFieldInfo {
 	 * @return
 	 */
 	public String getSelectField(Integer fieldsLength, Integer i) {
-		String fieldName = this.fieldName;
-		String comma = getComma(fieldsLength, i);
 		// field_name as fieldName,
-		return fieldName + AS + FieldUtil.toCamelCase(fieldName) + comma;
+		return fieldName + AS + this.fieldNameCamelCase + getComma(fieldsLength, i);
 	}
 
-	public String getCountField() {
-		String distinctStr = "";
-		if (null != op && op.isDistinct()) {
-			distinctStr = DISTINCT;
+	/**
+	 * 获取插入字段,主键并且是自增长不插入
+	 * 
+	 * @param fieldsLength
+	 * @param i
+	 * @return
+	 */
+	public String getInsertField(Integer fieldsLength, Integer i) {
+		String insertField = "";
+		if (isInsert()) {
+			insertField = this.fieldName + getComma(fieldsLength, i);
 		}
-		String fieldFormat = "count(" + distinctStr + " " + FieldUtil.toUnderlineName(value) + ")" + " as " + value;
-		return fieldFormat;
+		return insertField;
 	}
 
+	public String getInsertValue(Integer fieldsLength, Integer i) {
+		String ifNull = "<if test=\"#{%s} = null \"> %s</if>";
+		String ifNotNull = "<if test=\"#{%s} != null \"> %s</if>";
+		String insertValue = "";
+		if (isInsert()) {
+			String insertField = "";
+			if (isVoOrPo) {
+				insertField = "#{" + this.fieldNameCamelCase + "}" + getComma(fieldsLength, i);
+			} else {
+				insertField = "#{" + this.fieldIndex + "}" + getComma(fieldsLength, i);
+			}
+
+			if (!isNullAble && !StringUtils.isEmpty(defaultValue)) {// 不允许空，有默认值
+				insertValue = String.format(ifNull, i, insertField);
+				insertValue = String.format(ifNotNull, i, insertField);
+			} else {// 插入字段值允许空 // 插入字段值不允许空，也没有默认值 //两种情况
+				insertValue = insertField;
+			}
+		}
+		return insertValue;
+	}
+	
+	public String getBatchInsertValue(Integer fieldsLength, Integer i) {
+		String ifNull = "<if test=\"#{%s} = null \"> %s</if>";
+		String ifNotNull = "<if test=\"#{%s} != null \"> %s</if>";
+		String insertValue = "";
+		if (isInsert()) {
+			String insertField = "";
+			if (isVoOrPo) {
+				insertField = "#{item." + this.fieldNameCamelCase + "}" + getComma(fieldsLength, i);
+			} else {
+				insertField = "#{" + this.fieldIndex + "}" + getComma(fieldsLength, i);
+			}
+
+			if (!isNullAble && !StringUtils.isEmpty(defaultValue)) {// 不允许空，有默认值
+				insertValue = String.format(ifNull, i, insertField);
+				insertValue = String.format(ifNotNull, i, insertField);
+			} else {// 插入字段值允许空 // 插入字段值不允许空，也没有默认值 //两种情况
+				insertValue = insertField;
+			}
+		}
+		return insertValue;
+	}
+	
+
+	public String getWhereValue(Integer fieldsLength, Integer i) {
+		String comma = getComma(fieldsLength, i);
+		return AND + fieldName + getWhereValue(comma);
+	}
+
+	private String getWhereValue(String comma) {
+		String value = "#{" + this.fieldIndex + "}" + comma;
+		String whereValue = "=" + value;
+		if (op != null) {
+			if (!op.value().equals("")) {
+				whereValue = op.value() + value;
+			}
+
+			if (op.isNull()) {
+				whereValue = " is null";
+			}
+
+			if (op.isNotNull()) {
+				whereValue = " is not null";
+			}
+		}
+		return whereValue;
+	}
+
+	/**
+	 * 判断是否为主键并且是自增长
+	 * 
+	 * @return
+	 */
 	public boolean isInsert() {
 		return !isPrimaryKey() && !isAutoincrement();
 	}
@@ -164,6 +247,18 @@ public class DataBaseFieldInfo {
 
 	public void setSpecialField(String specialField) {
 		this.specialField = specialField;
+	}
+
+	public boolean isVoOrPo() {
+		return isVoOrPo;
+	}
+
+	public void setVoOrPo(boolean isVoOrPo) {
+		this.isVoOrPo = isVoOrPo;
+	}
+
+	public String getFieldNameCamelCase() {
+		return fieldNameCamelCase;
 	}
 
 }

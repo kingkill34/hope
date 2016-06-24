@@ -1,6 +1,7 @@
 package com.duowan.hope.mybatis.initparams;
 
 import com.duowan.hope.mybatis.annotation.Table;
+import com.duowan.hope.mybatis.util.FieldUtil;
 
 public class TableInfo {
 
@@ -22,7 +23,7 @@ public class TableInfo {
 	public TableInfo(Table table) {
 		this.clz = table.value();
 		this.typeName = this.clz.getName();
-		this.tableName = this.clz.getSimpleName();
+		this.tableName =FieldUtil.toCamelCase(this.clz.getSimpleName());
 		this.tableSuffix = table.tableSuffix();
 		this.tableSeparator = table.tableSeparator();
 	}
