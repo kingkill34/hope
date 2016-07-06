@@ -21,9 +21,6 @@ import com.duowan.hope.mybatis.MapperTagReources;
 import com.duowan.hope.mybatis.annotation.OP;
 import com.duowan.hope.mybatis.database.DataBaseFieldInfo;
 import com.duowan.hope.mybatis.util.FieldUtil;
-import com.duowan.hope.test.dao.UserDao;
-import com.duowan.hope.test.dao.UserNameDao;
-import com.duowan.hope.test.entity.User;
 
 public class MethodInfo {
 
@@ -151,7 +148,6 @@ public class MethodInfo {
 					String underLineFieldName = FieldUtil.toUnderlineName(field.getName());
 					if (columns.containsKey(underLineFieldName)) {
 						DataBaseFieldInfo dataBaseFieldInfo = columns.get(underLineFieldName);
-						dataBaseFieldInfo.setVoOrPo(isVoOrPo);
 						dataBaseFieldInfoList.add(dataBaseFieldInfo);
 					}
 				}
@@ -160,13 +156,16 @@ public class MethodInfo {
 
 		// 如果不是实体类,并且parameters ==0 or parameters.size>1
 		if (!isVoOrPo) {
+			int count = 0;
 			for (Parameter parameter : parameters) {
-				String fieldName = parameter.getName();
+				String fieldName = FieldUtil.toUnderlineName(parameter.getName());
 				OP op = parameter.getAnnotation(OP.class);
 				if (columns.containsKey(fieldName)) {
 					DataBaseFieldInfo dataBaseFieldInfo = columns.get(fieldName);
 					dataBaseFieldInfo.setOp(op);
+					dataBaseFieldInfo.setFieldIndex(count);
 					dataBaseFieldInfoList.add(dataBaseFieldInfo);
+					count++;
 				}
 			}
 
@@ -214,8 +213,13 @@ public class MethodInfo {
 		if (null != index && index > -1) {
 			String indexStr = "";
 			if (isVoOrPo) {
-				indexStr = "#{" + this.tableInfo.getTableSuffix() + "}";
-				tableSuffix = this.tableInfo.getTableSeparator() + "${" + this.tableInfo.getTableSuffix() + "}";
+				String listStr = "";
+				if (paramterType.equals(List.class.getName())) {
+					listStr = "list[0].";
+				}
+
+				indexStr = "#{" + listStr + this.tableInfo.getTableSuffix() + "}";
+				tableSuffix = this.tableInfo.getTableSeparator() + "${" + listStr + this.tableInfo.getTableSuffix() + "}";
 			} else {
 				indexStr = "#{" + this.tableInfo.getIndex() + "}";
 				tableSuffix = this.tableInfo.getTableSeparator() + indexStr;
@@ -239,6 +243,8 @@ public class MethodInfo {
 		if (StringUtils.isEmpty(value)) {
 			fieldFormat = "count(1) as `count`";
 		} else {
+
+			// 是否去重
 			String distinctStr = "";
 			if (distinct) {
 				distinctStr = "distinct";
@@ -283,9 +289,10 @@ public class MethodInfo {
 				setTableInfoIndex(dataBaseFieldInfo.getFieldNameCamelCase(), i);
 				// 如果是集合，VALUE的填写方式不一样
 				if (isCollection) {
-					insertValue.append(dataBaseFieldInfo.getBatchInsertValue(fieldsLength, i));
+					insertValue.append(dataBaseFieldInfo.getBatchInsertValue(fieldsLength, i, isVoOrPo));
 				} else {
-					insertValue.append(dataBaseFieldInfo.getInsertValue(fieldsLength, i));
+					insertValue.append(dataBaseFieldInfo.getInsertValue(fieldsLength, i, isVoOrPo));
+
 				}
 
 			}

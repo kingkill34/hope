@@ -7,6 +7,8 @@ public class TableInfo {
 
 	private String tableName;
 
+	private String tableNameUnderLine;
+
 	private String tableSuffix;
 
 	private String tableSeparator;
@@ -23,7 +25,8 @@ public class TableInfo {
 	public TableInfo(Table table) {
 		this.clz = table.value();
 		this.typeName = this.clz.getName();
-		this.tableName =FieldUtil.toCamelCase(this.clz.getSimpleName());
+		this.tableName = FieldUtil.toCamelCase(this.clz.getSimpleName());
+		this.tableNameUnderLine = FieldUtil.toUnderlineName(this.clz.getSimpleName());
 		this.tableSuffix = table.tableSuffix();
 		this.tableSeparator = table.tableSeparator();
 	}
@@ -74,6 +77,14 @@ public class TableInfo {
 
 	public void setClz(Class<?> clz) {
 		this.clz = clz;
+	}
+
+	public String getTableNameUnderLine() {
+		return tableNameUnderLine;
+	}
+
+	public void setTableNameUnderLine(String tableNameUnderLine) {
+		this.tableNameUnderLine = tableNameUnderLine;
 	}
 
 }

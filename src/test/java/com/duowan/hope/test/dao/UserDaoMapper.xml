@@ -1,14 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.duowan.hope.test.dao.UserDao">
-	<insert id="insertList" parameterType="java.util.List">
-		INSERT INTO
-		<trim suffix='' suffixOverrides=' '>
-			user<if test="#{list[0].gameId} != null">_${list[0].gameId}</if>
-		</trim>
-		(nick_name,login_name,login_password,type,game_id) VALUES
-		<foreach collection="list" item="item" index="index" separator=",">
-		(#{item.nickName},#{item.loginName},#{item.loginPassword},#{item.type},#{item.gameId})
-		</foreach>
-	</insert>
+
+
 </mapper>
