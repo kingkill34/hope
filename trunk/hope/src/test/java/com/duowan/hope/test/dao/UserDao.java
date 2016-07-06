@@ -3,7 +3,9 @@ package com.duowan.hope.test.dao;
 import java.util.List;
 import java.util.Map;
 
+import com.duowan.hope.mybatis.annotation.HopeDelete;
 import com.duowan.hope.mybatis.annotation.HopeInsert;
+import com.duowan.hope.mybatis.annotation.HopeSelect;
 import com.duowan.hope.mybatis.annotation.OP;
 import com.duowan.hope.mybatis.annotation.Table;
 import com.duowan.hope.test.entity.User;
@@ -71,22 +73,19 @@ public interface UserDao {
 	// @HopeSelect
 	List<User> testTSN(Integer id, Integer gameId);
 
-	//@HopeInsert
+	// @HopeInsert
 	Integer insert(User user);
 
-	//@HopeInsert
+	// @HopeInsert
 	Integer insertList(List<User> user);
 
 	// @HopeInsert
-	// boolean insert(List<User> user);
+	Boolean insertByBoolean(User user);
 
 	// @HopeInsert
-	// Boolean insertByBoolean(User user);
-	//
-	// @HopeInsert
-	// Integer insertByInteger(User user);
-	//
-	// @HopeInsert
-	// Integer insertByInt(User user);
+	Integer insertParams(Integer type, String nickName, String loginName, String loginPassword);
+
+	@HopeDelete
+	Integer delete(String loginName);
 
 }

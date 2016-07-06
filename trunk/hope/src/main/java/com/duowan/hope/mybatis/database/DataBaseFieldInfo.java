@@ -22,15 +22,13 @@ public class DataBaseFieldInfo {
 	private boolean isDistinct = false;
 	private OP op;
 	private String specialField;
-	private boolean isVoOrPo;
 
-	public DataBaseFieldInfo(String fieldName, String fieldType, String nullAble, String defaultValue, String autoincrement, boolean isPrimaryKey, Integer index) {
+	public DataBaseFieldInfo(String fieldName, String fieldType, String nullAble, String defaultValue, String autoincrement, boolean isPrimaryKey) {
 		this.fieldName = fieldName;
 		this.fieldNameCamelCase = FieldUtil.toCamelCase(fieldName);
 		this.fieldType = fieldType;
 		this.defaultValue = defaultValue;
 		this.isPrimaryKey = isPrimaryKey;
-		this.fieldIndex = index;
 
 		if (nullAble.equals("YES")) {
 			isNullAble = true;
@@ -66,7 +64,7 @@ public class DataBaseFieldInfo {
 		return insertField;
 	}
 
-	public String getInsertValue(Integer fieldsLength, Integer i) {
+	public String getInsertValue(Integer fieldsLength, Integer i,boolean isVoOrPo) {
 		String ifNull = "<if test=\"#{%s} = null \"> %s</if>";
 		String ifNotNull = "<if test=\"#{%s} != null \"> %s</if>";
 		String insertValue = "";
@@ -88,7 +86,7 @@ public class DataBaseFieldInfo {
 		return insertValue;
 	}
 	
-	public String getBatchInsertValue(Integer fieldsLength, Integer i) {
+	public String getBatchInsertValue(Integer fieldsLength, Integer i,boolean isVoOrPo) {
 		String ifNull = "<if test=\"#{%s} = null \"> %s</if>";
 		String ifNotNull = "<if test=\"#{%s} != null \"> %s</if>";
 		String insertValue = "";
@@ -249,13 +247,6 @@ public class DataBaseFieldInfo {
 		this.specialField = specialField;
 	}
 
-	public boolean isVoOrPo() {
-		return isVoOrPo;
-	}
-
-	public void setVoOrPo(boolean isVoOrPo) {
-		this.isVoOrPo = isVoOrPo;
-	}
 
 	public String getFieldNameCamelCase() {
 		return fieldNameCamelCase;

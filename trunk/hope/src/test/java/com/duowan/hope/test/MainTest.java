@@ -178,4 +178,29 @@ public class MainTest extends AbstractJUnit4SpringContextTests {
 		System.out.println(result);
 	}
 
+	@Test
+	public void insertByBoolean() {
+		User user = new User();
+		user.setId(3);
+		user.setLoginName("mouzemin3");
+		user.setLoginPassword("dddddd");
+		user.setNickName("frankie");
+		user.setType(1);
+		user.setGameId("2022");
+		boolean result = userDao.insertByBoolean(user);
+		System.out.println(result);
+	}
+
+	@Test
+	public void insertParams() {
+		Integer result = userDao.insertParams(1, "frankie", "mouzemin3", "dddddd");
+		System.out.println(result);
+	}
+
+	@Test
+	public void delete() {
+		Integer result = userDao.delete("mouzemin3");
+		System.out.println(result);
+	}
+
 }

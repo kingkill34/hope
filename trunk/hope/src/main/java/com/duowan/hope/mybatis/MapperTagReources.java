@@ -71,7 +71,7 @@ public class MapperTagReources {
 
 	// sql
 	public static final String SQL_SELECT = "SELECT %s FROM <trim suffix='' suffixOverrides=' '>%s%s</trim> <where>%s</where> %s %s";
-	public static final String SQL_INSERT = "INSERT INTO <trim suffix='' suffixOverrides=' '>%s%s</trim> (%s) VALUES(%s)";
+	public static final String SQL_INSERT = "INSERT INTO <trim suffix='' suffixOverrides=' '>%s%s</trim> (%s) VALUES %s";
 	
 	public static final String SQL_BATCH_INSERT = "INSERT INTO <trim suffix='' suffixOverrides=' '>%s%s</trim> (%s) VALUES <foreach collection='list' item='item' index='index' separator=','>%s</foreach>";
 

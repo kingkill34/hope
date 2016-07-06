@@ -22,12 +22,14 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.StringUtils;
 
 import com.duowan.hope.mybatis.annotation.HopeCount;
+import com.duowan.hope.mybatis.annotation.HopeDelete;
 import com.duowan.hope.mybatis.annotation.HopeInsert;
 import com.duowan.hope.mybatis.annotation.HopeSelect;
 import com.duowan.hope.mybatis.annotation.Table;
 import com.duowan.hope.mybatis.database.DataBaseFieldInfo;
 import com.duowan.hope.mybatis.initparams.MethodInfo;
 import com.duowan.hope.mybatis.initparams.TableInfo;
+import com.duowan.hope.mybatis.util.FieldUtil;
 
 public class HopeMappperBuiler2 {
 
@@ -129,7 +131,7 @@ public class HopeMappperBuiler2 {
 		Method[] methods = daoClz.getDeclaredMethods();
 		TableInfo tableInfo = getTableInfo(daoClz);
 
-		Map<String, DataBaseFieldInfo> columns = getTableColumn(connection, tableInfo.getTableName());
+		Map<String, DataBaseFieldInfo> columns = getTableColumn(connection, tableInfo.getTableNameUnderLine());
 
 		for (Method method : methods) {
 			Annotation annotation = getHopeAnnotation(method);
@@ -152,10 +154,35 @@ public class HopeMappperBuiler2 {
 					buildInsert(methodInfo, root);
 					break;
 				}
+				
+				
+				// build insert
+				if (methodInfo.getType().equals(HopeDelete.class.getSimpleName())) {
+					buildDelete(methodInfo, root);
+					break;
+				}
 
 			}
 		}
 
+	}
+	
+	
+	private void buildDelete(MethodInfo methodInfo, Element root) {
+
+		String insertField = methodInfo.getInsertField();
+		String insertValue = methodInfo.getInsertValue();
+		String tableName = methodInfo.getTableName();
+		String tableSuffix = methodInfo.getTableSuffix();
+
+		String formatStr = MapperTagReources.SQL_INSERT;
+		if (methodInfo.isCollection()) {
+			formatStr = MapperTagReources.SQL_BATCH_INSERT;
+		}
+
+		String context = String.format(formatStr, tableName, tableSuffix, insertField, insertValue);
+		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_INSERT);
+		setElementAttr(element, methodInfo.getId(), methodInfo.getParamterType(), null, context);
 	}
 
 	private void buildInsert(MethodInfo methodInfo, Element root) {
@@ -242,7 +269,7 @@ public class HopeMappperBuiler2 {
 					isPrimaryKey = true;
 				}
 
-				DataBaseFieldInfo dataBaseFieldInfo = new DataBaseFieldInfo(columnName, typeName, nullAble, defaultValue, autoincrement, isPrimaryKey, index);
+				DataBaseFieldInfo dataBaseFieldInfo = new DataBaseFieldInfo(columnName, typeName, nullAble, defaultValue, autoincrement, isPrimaryKey);
 				columns.put(columnName, dataBaseFieldInfo);
 				index++;
 
