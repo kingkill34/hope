@@ -72,9 +72,10 @@ public class MapperTagReources {
 	// sql
 	public static final String SQL_SELECT = "SELECT %s FROM <trim suffix='' suffixOverrides=' '>%s%s</trim> <where>%s</where> %s %s";
 	public static final String SQL_INSERT = "INSERT INTO <trim suffix='' suffixOverrides=' '>%s%s</trim> (%s) VALUES %s";
-	
 	public static final String SQL_BATCH_INSERT = "INSERT INTO <trim suffix='' suffixOverrides=' '>%s%s</trim> (%s) VALUES <foreach collection='list' item='item' index='index' separator=','>%s</foreach>";
-
+	public static final String SQL_DELETE = "DELETE FROM <trim suffix='' suffixOverrides=' '>%s%s</trim> <where>%s</where>";
+	public static final String SQL_UPDATE = "UPDATE <trim suffix='' suffixOverrides=' '>%s%s</trim> <set>%s</set> <where>%s</where>";
+	
 	// 抛弃
 	public static final String SQL_SELECT_DISTINCT_COUNT = "SELECT count(distinct %s) FROM %s <where>%s</where>";
 
@@ -82,8 +83,8 @@ public class MapperTagReources {
 
 	//public static final String SQL_BATCH_INSERT = "INSERT INTO %s (<trim suffixOverrides=\",\"> %s</trim>) VALUES(<trim suffixOverrides=\",\">%s</trim>)";
 
-	public static final String SQL_DELETE = "DELETE FROM %s${tableNameSuffixes} <where>%s</where>";
+	
 
-	public static final String SQL_UPDATE = "UPDATE %s${tableNameSuffixes} <set>%s</set> <where>%s</where>";
+	
 
 }

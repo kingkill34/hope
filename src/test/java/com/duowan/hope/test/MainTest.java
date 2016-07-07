@@ -181,7 +181,6 @@ public class MainTest extends AbstractJUnit4SpringContextTests {
 	@Test
 	public void insertByBoolean() {
 		User user = new User();
-		user.setId(3);
 		user.setLoginName("mouzemin3");
 		user.setLoginPassword("dddddd");
 		user.setNickName("frankie");
@@ -200,6 +199,37 @@ public class MainTest extends AbstractJUnit4SpringContextTests {
 	@Test
 	public void delete() {
 		Integer result = userDao.delete("mouzemin3");
+		System.out.println(result);
+	}
+
+	@Test
+	public void deleteByBoolean() {
+		boolean result = userDao.deleteByBoolean("mouzemin3");
+		System.out.println(result);
+	}
+
+	@Test
+	public void deleteGameId() {
+		Integer result = userDao.deleteGameId(16, "2022");
+		System.out.println(result);
+	}
+
+	@Test
+	public void testDelete() {
+		Integer result = userDao.testDelete(18, "2022");
+		System.out.println(result);
+	}
+
+	@Test
+	public void update() {
+		User user = new User();
+		user.setId(3);
+		user.setLoginName("mouzemin333333");
+		user.setLoginPassword("dddddd3333");
+		user.setNickName("frankie333");
+		user.setType(1);
+		user.setGameId("2022");
+		Integer result = userDao.update(user);
 		System.out.println(result);
 	}
 

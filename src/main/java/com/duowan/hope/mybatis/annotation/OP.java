@@ -25,4 +25,6 @@ public @interface OP {
 
 	boolean isNotNull() default false;
 
+	boolean isUpdate() default false;
+
 }

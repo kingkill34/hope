@@ -7,5 +7,7 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface HopeInsert {
+public @interface HopeUpdate {
+
+	String value() default "";
 }

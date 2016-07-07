@@ -25,11 +25,11 @@ import com.duowan.hope.mybatis.annotation.HopeCount;
 import com.duowan.hope.mybatis.annotation.HopeDelete;
 import com.duowan.hope.mybatis.annotation.HopeInsert;
 import com.duowan.hope.mybatis.annotation.HopeSelect;
+import com.duowan.hope.mybatis.annotation.HopeUpdate;
 import com.duowan.hope.mybatis.annotation.Table;
 import com.duowan.hope.mybatis.database.DataBaseFieldInfo;
 import com.duowan.hope.mybatis.initparams.MethodInfo;
 import com.duowan.hope.mybatis.initparams.TableInfo;
-import com.duowan.hope.mybatis.util.FieldUtil;
 
 public class HopeMappperBuiler2 {
 
@@ -122,6 +122,15 @@ public class HopeMappperBuiler2 {
 		if (annotation == null) {
 			annotation = method.getAnnotation(HopeInsert.class);
 		}
+
+		if (annotation == null) {
+			annotation = method.getAnnotation(HopeDelete.class);
+		}
+
+		if (annotation == null) {
+			annotation = method.getAnnotation(HopeUpdate.class);
+		}
+
 		return annotation;
 	}
 
@@ -140,49 +149,58 @@ public class HopeMappperBuiler2 {
 				// build select
 				if (methodInfo.getType().equals(HopeSelect.class.getSimpleName())) {
 					buildSelect(methodInfo, root);
-					break;
+					continue;
 				}
 
 				// build count
 				if (methodInfo.getType().equals(HopeCount.class.getSimpleName())) {
 					buildCount(methodInfo, root);
-					break;
+					continue;
 				}
 
 				// build insert
 				if (methodInfo.getType().equals(HopeInsert.class.getSimpleName())) {
 					buildInsert(methodInfo, root);
-					break;
+					continue;
 				}
-				
-				
+
 				// build insert
 				if (methodInfo.getType().equals(HopeDelete.class.getSimpleName())) {
 					buildDelete(methodInfo, root);
-					break;
+					continue;
+				}
+
+				// build update
+				if (methodInfo.getType().equals(HopeUpdate.class.getSimpleName())) {
+					buildUpdate(methodInfo, root);
+					continue;
 				}
 
 			}
 		}
 
 	}
-	
-	
-	private void buildDelete(MethodInfo methodInfo, Element root) {
 
-		String insertField = methodInfo.getInsertField();
-		String insertValue = methodInfo.getInsertValue();
+	private void buildUpdate(MethodInfo methodInfo, Element root) {
+		String set = methodInfo.getUpdate();
+		String where = methodInfo.getWhere();
 		String tableName = methodInfo.getTableName();
 		String tableSuffix = methodInfo.getTableSuffix();
 
-		String formatStr = MapperTagReources.SQL_INSERT;
-		if (methodInfo.isCollection()) {
-			formatStr = MapperTagReources.SQL_BATCH_INSERT;
-		}
+		String context = String.format(MapperTagReources.SQL_UPDATE, tableName, tableSuffix, set, where);
+		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_DELETE);
+		setElementAttr(element, methodInfo.getId(), null, null, context);
+	}
 
-		String context = String.format(formatStr, tableName, tableSuffix, insertField, insertValue);
-		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_INSERT);
-		setElementAttr(element, methodInfo.getId(), methodInfo.getParamterType(), null, context);
+	private void buildDelete(MethodInfo methodInfo, Element root) {
+
+		String where = methodInfo.getWhere();
+		String tableName = methodInfo.getTableName();
+		String tableSuffix = methodInfo.getTableSuffix();
+
+		String context = String.format(MapperTagReources.SQL_DELETE, tableName, tableSuffix, where);
+		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_DELETE);
+		setElementAttr(element, methodInfo.getId(), null, null, context);
 	}
 
 	private void buildInsert(MethodInfo methodInfo, Element root) {
@@ -255,7 +273,6 @@ public class HopeMappperBuiler2 {
 				PRIMARY_KEY.add(primaryKeys.getString(COLUMN_NAME).toLowerCase());
 			}
 			ResultSet resultSet = databaseMetaData.getColumns(null, null, tableName, "%");
-			int index = 0;
 			while (resultSet.next()) {
 				isPrimaryKey = false;
 				columnName = resultSet.getString(COLUMN_NAME).toLowerCase();
@@ -271,7 +288,6 @@ public class HopeMappperBuiler2 {
 
 				DataBaseFieldInfo dataBaseFieldInfo = new DataBaseFieldInfo(columnName, typeName, nullAble, defaultValue, autoincrement, isPrimaryKey);
 				columns.put(columnName, dataBaseFieldInfo);
-				index++;
 
 			}
 		} catch (Exception e) {
