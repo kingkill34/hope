@@ -3,4 +3,12 @@
 <mapper namespace="com.duowan.hope.test.dao.UserDao">
 
 
+
+
+
+	<delete id="testDelete">
+		DELETE FROM 
+		<trim suffix='' suffixOverrides="'">user<if test="#{param2} != null ">_${param2}</if></trim> 
+		<where> AND id>#{param1} AND game_id=#{param2}</where>
+	</delete>
 </mapper>

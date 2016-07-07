@@ -20,8 +20,8 @@ public class DataBaseFieldInfo {
 	private boolean isAutoincrement = false;
 	private int fieldIndex;
 	private boolean isDistinct = false;
+	private boolean isEntityParam;
 	private OP op;
-	private String specialField;
 
 	public DataBaseFieldInfo(String fieldName, String fieldType, String nullAble, String defaultValue, String autoincrement, boolean isPrimaryKey) {
 		this.fieldName = fieldName;
@@ -64,7 +64,7 @@ public class DataBaseFieldInfo {
 		return insertField;
 	}
 
-	public String getInsertValue(Integer fieldsLength, Integer i,boolean isVoOrPo) {
+	public String getInsertValue(Integer fieldsLength, Integer i, boolean isVoOrPo) {
 		String ifNull = "<if test=\"#{%s} = null \"> %s</if>";
 		String ifNotNull = "<if test=\"#{%s} != null \"> %s</if>";
 		String insertValue = "";
@@ -85,8 +85,8 @@ public class DataBaseFieldInfo {
 		}
 		return insertValue;
 	}
-	
-	public String getBatchInsertValue(Integer fieldsLength, Integer i,boolean isVoOrPo) {
+
+	public String getBatchInsertValue(Integer fieldsLength, Integer i, boolean isVoOrPo) {
 		String ifNull = "<if test=\"#{%s} = null \"> %s</if>";
 		String ifNotNull = "<if test=\"#{%s} != null \"> %s</if>";
 		String insertValue = "";
@@ -107,15 +107,19 @@ public class DataBaseFieldInfo {
 		}
 		return insertValue;
 	}
-	
 
-	public String getWhereValue(Integer fieldsLength, Integer i) {
-		String comma = getComma(fieldsLength, i);
-		return AND + fieldName + getWhereValue(comma);
+	public String getUpdateValue(Integer fieldsLength, Integer i) {
+		String updateValue = "";
+		if (isEntityParam) {
+			updateValue = this.fieldName + "=" + "#{" + this.fieldName + "}" + getComma(fieldsLength, i);
+		} else {
+			updateValue = "#{" + this.fieldIndex + "}" + getComma(fieldsLength, i);
+		}
+		return updateValue;
 	}
 
-	private String getWhereValue(String comma) {
-		String value = "#{" + this.fieldIndex + "}" + comma;
+	public String getWhereValue() {
+		String value = "#{" + this.fieldIndex + "}";
 		String whereValue = "=" + value;
 		if (op != null) {
 			if (!op.value().equals("")) {
@@ -130,7 +134,7 @@ public class DataBaseFieldInfo {
 				whereValue = " is not null";
 			}
 		}
-		return whereValue;
+		return AND + fieldName + whereValue;
 	}
 
 	/**
@@ -239,17 +243,16 @@ public class DataBaseFieldInfo {
 		this.isDistinct = isDistinct;
 	}
 
-	public String getSpecialField() {
-		return specialField;
-	}
-
-	public void setSpecialField(String specialField) {
-		this.specialField = specialField;
-	}
-
-
 	public String getFieldNameCamelCase() {
 		return fieldNameCamelCase;
+	}
+
+	public boolean isEntityParam() {
+		return isEntityParam;
+	}
+
+	public void setEntityParam(boolean isEntityParam) {
+		this.isEntityParam = isEntityParam;
 	}
 
 }

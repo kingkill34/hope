@@ -18,6 +18,7 @@ import org.apache.ibatis.type.TypeAliasRegistry;
 import org.springframework.util.StringUtils;
 
 import com.duowan.hope.mybatis.MapperTagReources;
+import com.duowan.hope.mybatis.annotation.HopeSelect;
 import com.duowan.hope.mybatis.annotation.OP;
 import com.duowan.hope.mybatis.database.DataBaseFieldInfo;
 import com.duowan.hope.mybatis.util.FieldUtil;
@@ -31,9 +32,12 @@ public class MethodInfo {
 
 	private List<DataBaseFieldInfo> dataBaseFieldInfoList; // 组装SQL需要用到的字段
 
+	private Map<String, DataBaseFieldInfo> prefixFiels;
+	private Map<String, DataBaseFieldInfo> suffixFiels;
+
 	private String id; // 对应mybatis 方法的ID
 
-	private String value;
+	private String value; // 个性化查询字段或者条件
 
 	private String returnType; // 方法返回类型
 
@@ -94,7 +98,11 @@ public class MethodInfo {
 		setAnnotationInfo(annotation);
 		setType(annotation);
 		this.returnType = getReturnType(method);
-		setDataBaseFieldInfoList(method, columns);
+
+		setPrefixFiels(method, columns);
+		setSuffixFiels(method, columns);
+
+		// setDataBaseFieldInfoList(method, columns);
 	}
 
 	private RegisterAliasInfo setParamterType(String typeName) {
@@ -119,6 +127,69 @@ public class MethodInfo {
 		}
 		return RegisterAliasInfo;
 
+	}
+
+	/**
+	 * 设置前置字段 包含查询、修改、更新需要的字段
+	 * 
+	 * @param method
+	 * @param columns
+	 */
+	private void setPrefixFiels(Method method, Map<String, DataBaseFieldInfo> columns) {
+		prefixFiels = new TreeMap<String, DataBaseFieldInfo>();
+		if (!StringUtils.isEmpty(value)) {
+			String[] values = this.value.split(",");
+			for (String v : values) {
+				prefixFiels.put(v, columns.get(v));
+			}
+		} else {
+			prefixFiels = columns;
+		}
+
+	}
+
+	/**
+	 * 设置Where条件字段
+	 * 
+	 * @param method
+	 * @param columns
+	 */
+	private void setSuffixFiels(Method method, Map<String, DataBaseFieldInfo> columns) {
+		suffixFiels = new TreeMap<String, DataBaseFieldInfo>();
+		Parameter[] parameters = method.getParameters();
+
+		int count = 1;
+		for (Parameter parameter : parameters) {
+			// 获取参数类型
+			String typeName = parameter.getParameterizedType().getTypeName();
+			// 设置传入方法类型
+			RegisterAliasInfo registerAliasInfo = setParamterType(typeName);
+
+			String fieldName = FieldUtil.toUnderlineName(parameter.getName());
+			// 如果参数类型为基础类型
+			if (null == registerAliasInfo) {
+				OP op = parameter.getAnnotation(OP.class);
+				if (columns.containsKey(fieldName)) {
+					DataBaseFieldInfo dataBaseFieldInfo = columns.get(fieldName);
+					dataBaseFieldInfo.setEntityParam(false);
+					dataBaseFieldInfo.setOp(op);
+					dataBaseFieldInfo.setFieldIndex(count);
+					suffixFiels.put(fieldName, dataBaseFieldInfo);
+					count++;
+				}
+			} else { // 如果参数是对象
+				Field[] fields = registerAliasInfo.getClz().getDeclaredFields();
+				for (Field field : fields) {
+					fieldName = FieldUtil.toUnderlineName(field.getName());
+					if (columns.containsKey(fieldName)) {
+						DataBaseFieldInfo dataBaseFieldInfo = columns.get(fieldName);
+						dataBaseFieldInfo.setEntityParam(true);
+						suffixFiels.put(fieldName, dataBaseFieldInfo);
+					}
+				}
+			}
+
+		}
 	}
 
 	/**
@@ -193,11 +264,12 @@ public class MethodInfo {
 	 */
 	public String getWhere() {
 		StringBuffer where = new StringBuffer();
-		int fieldsLength = dataBaseFieldInfoList.size();
-		for (int i = 0; i < fieldsLength; i++) {
-			DataBaseFieldInfo dataBaseFieldInfo = dataBaseFieldInfoList.get(i);
+		int i = 0;
+		for (Map.Entry<String, DataBaseFieldInfo> entry : suffixFiels.entrySet()) {
+			DataBaseFieldInfo dataBaseFieldInfo = entry.getValue();
 			setTableInfoIndex(dataBaseFieldInfo.getFieldNameCamelCase(), i); // 找到分表字段下标，进行标记
-			where.append(dataBaseFieldInfo.getWhereValue(fieldsLength, i));
+			where.append(dataBaseFieldInfo.getWhereValue());
+			i++;
 		}
 		return where.toString();
 	}
@@ -221,8 +293,8 @@ public class MethodInfo {
 				indexStr = "#{" + listStr + this.tableInfo.getTableSuffix() + "}";
 				tableSuffix = this.tableInfo.getTableSeparator() + "${" + listStr + this.tableInfo.getTableSuffix() + "}";
 			} else {
-				indexStr = "#{" + this.tableInfo.getIndex() + "}";
-				tableSuffix = this.tableInfo.getTableSeparator() + indexStr;
+				indexStr = "#{param" + this.tableInfo.getIndex() + "}";
+				tableSuffix = this.tableInfo.getTableSeparator() + "${param" + this.tableInfo.getIndex() + "}";
 			}
 
 			tableSuffix = String.format(MapperTagReources.MAPPER_TABLE_SUFFIX, indexStr, tableSuffix);
@@ -300,6 +372,23 @@ public class MethodInfo {
 		}
 		return insertValue.toString();
 
+	}
+
+	/**
+	 * 获取更新字段
+	 * 
+	 * @return
+	 */
+	public String getUpdate() {
+		StringBuffer update = new StringBuffer();
+		int fieldsLength = prefixFiels.size();
+		int count = 1;
+		for (Map.Entry<String, DataBaseFieldInfo> entry : prefixFiels.entrySet()) {
+			DataBaseFieldInfo dataBaseFieldInfo = entry.getValue();
+			setTableInfoIndex(dataBaseFieldInfo.getFieldNameCamelCase(), count);
+			update.append(dataBaseFieldInfo.getUpdateValue(fieldsLength, count - 1));
+		}
+		return update.toString();
 	}
 
 	private void setGroupBy(StringBuffer selectFields) {

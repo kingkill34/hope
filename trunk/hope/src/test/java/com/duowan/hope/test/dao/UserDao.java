@@ -6,6 +6,7 @@ import java.util.Map;
 import com.duowan.hope.mybatis.annotation.HopeDelete;
 import com.duowan.hope.mybatis.annotation.HopeInsert;
 import com.duowan.hope.mybatis.annotation.HopeSelect;
+import com.duowan.hope.mybatis.annotation.HopeUpdate;
 import com.duowan.hope.mybatis.annotation.OP;
 import com.duowan.hope.mybatis.annotation.Table;
 import com.duowan.hope.test.entity.User;
@@ -70,7 +71,7 @@ public interface UserDao {
 	// @HopeSelect
 	List<User> testOP(@OP("!=") Integer id);
 
-	// @HopeSelect
+	@HopeSelect
 	List<User> testTSN(Integer id, Integer gameId);
 
 	// @HopeInsert
@@ -85,7 +86,17 @@ public interface UserDao {
 	// @HopeInsert
 	Integer insertParams(Integer type, String nickName, String loginName, String loginPassword);
 
-	@HopeDelete
+	// @HopeDelete
 	Integer delete(String loginName);
 
+	// @HopeDelete
+	Boolean deleteByBoolean(String loginName);
+
+	// @HopeDelete
+	Integer deleteGameId(@OP(">") Integer id, String gameId);
+
+	Integer testDelete(Integer id, String gameId);
+
+	@HopeUpdate("id")
+	Integer update(User user);
 }
