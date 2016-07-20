@@ -24,6 +24,16 @@ public class MainTest extends AbstractJUnit4SpringContextTests {
 	@Resource(name = "userDao")
 	private UserDao userDao;
 
+	
+	
+	
+	@Test
+	public void getUserTest() {
+		User user = userDao.getUserTest("mouzemin1");
+		System.out.println(user.getNickName());
+	}
+	
+	
 	@Test
 	public void getUser() {
 		User user = userDao.getUser("mouzemin1");
@@ -223,13 +233,29 @@ public class MainTest extends AbstractJUnit4SpringContextTests {
 	@Test
 	public void update() {
 		User user = new User();
-		user.setId(3);
+		user.setId(1);
 		user.setLoginName("mouzemin333333");
-		user.setLoginPassword("dddddd3333");
 		user.setNickName("frankie333");
 		user.setType(1);
 		user.setGameId("2022");
 		Integer result = userDao.update(user);
+		System.out.println(result);
+	}
+
+	@Test
+	public void updateByParams() {
+		User user = new User();
+		user.setLoginName("mouzemin123");
+		user.setNickName("frankie123");
+		user.setType(1);
+		user.setGameId("2022");
+		Integer result = userDao.updateByParams(user, 4, "dddddd3333");
+		System.out.println(result);
+	}
+
+	@Test
+	public void updateFieldByParams() {
+		Integer result = userDao.updateFieldByParams("kingkill33", 2, "dddddd");
 		System.out.println(result);
 	}
 

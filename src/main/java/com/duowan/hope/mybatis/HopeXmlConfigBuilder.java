@@ -30,6 +30,8 @@ import org.apache.ibatis.session.LocalCacheScope;
 import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.type.JdbcType;
 
+import com.duowan.hope.mybatis.page.PageInterceptor;
+
 public class HopeXmlConfigBuilder extends BaseBuilder {
 
 	private boolean parsed;
@@ -142,6 +144,10 @@ public class HopeXmlConfigBuilder extends BaseBuilder {
 				configuration.addInterceptor(interceptorInstance);
 			}
 		}
+
+		// 增加分页拦截器
+		Interceptor interceptorInstance = (Interceptor) resolveClass(PageInterceptor.class.getName()).newInstance();
+		configuration.addInterceptor(interceptorInstance);
 	}
 
 	private void objectFactoryElement(XNode context) throws Exception {
@@ -300,7 +306,7 @@ public class HopeXmlConfigBuilder extends BaseBuilder {
 
 	private void mapperElement(XNode parent) throws Exception {
 		if (parent != null) {
-			HopeMappperBuiler2 hopeMapperBuild = new HopeMappperBuiler2();
+			HopeMappperBuiler hopeMapperBuild = new HopeMappperBuiler();
 			for (XNode child : parent.getChildren()) {
 				if ("package".equals(child.getName())) {
 					String mapperPackage = child.getStringAttribute("name");
@@ -311,7 +317,7 @@ public class HopeXmlConfigBuilder extends BaseBuilder {
 					String mapperClass = child.getStringAttribute("class");
 					if (resource != null && url == null && mapperClass == null) {
 						ErrorContext.instance().resource(resource);
-						InputStream inputStream = hopeMapperBuild.build(resource, connection,configuration.getTypeAliasRegistry());
+						InputStream inputStream = hopeMapperBuild.build(resource, connection, configuration.getTypeAliasRegistry());
 						XMLMapperBuilder mapperParser = new XMLMapperBuilder(inputStream, configuration, resource, configuration.getSqlFragments());
 						mapperParser.parse();
 					} else if (resource == null && url != null && mapperClass == null) {

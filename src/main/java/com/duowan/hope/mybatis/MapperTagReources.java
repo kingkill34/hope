@@ -33,6 +33,10 @@ public class MapperTagReources {
 	public static final String MAPPER_PARAMETER_TYPE = "parameterType";
 
 	public static final String MAPPER_RESULT_TYPE = "resultType";
+	
+	public static final String USE_GENERATED_KEYS = "useGeneratedKeys";
+	
+	public static final String KEY_PROPERTY = "keyProperty";
 
 	public static final String MAPPER_IF = "<if test=\"%s != null and %s !='' \"> %s,</if>";
 
@@ -72,7 +76,8 @@ public class MapperTagReources {
 	// sql
 	public static final String SQL_SELECT = "SELECT %s FROM <trim suffix='' suffixOverrides=' '>%s%s</trim> <where>%s</where> %s %s";
 	public static final String SQL_INSERT = "INSERT INTO <trim suffix='' suffixOverrides=' '>%s%s</trim> (%s) VALUES %s";
-	public static final String SQL_BATCH_INSERT = "INSERT INTO <trim suffix='' suffixOverrides=' '>%s%s</trim> (%s) VALUES <foreach collection='list' item='item' index='index' separator=','>%s</foreach>";
+	public static final String SQL_BATCH_INSERT_LIST = "INSERT INTO <trim suffix='' suffixOverrides=' '>%s%s</trim> (%s) VALUES <foreach collection='list' item='item' index='index' separator=','>%s</foreach>";
+	public static final String SQL_BATCH_INSERT_ARRAY = "INSERT INTO <trim suffix='' suffixOverrides=' '>%s%s</trim> (%s) VALUES <foreach collection='array' item='item' index='index' separator=','>%s</foreach>";
 	public static final String SQL_DELETE = "DELETE FROM <trim suffix='' suffixOverrides=' '>%s%s</trim> <where>%s</where>";
 	public static final String SQL_UPDATE = "UPDATE <trim suffix='' suffixOverrides=' '>%s%s</trim> <set>%s</set> <where>%s</where>";
 	

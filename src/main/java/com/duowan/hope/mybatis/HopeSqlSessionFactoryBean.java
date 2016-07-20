@@ -42,6 +42,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy;
 
 import com.duowan.hope.Params;
+import com.duowan.hope.mybatis.page.PageInterceptor;
 
 public class HopeSqlSessionFactoryBean implements FactoryBean<SqlSessionFactory>, InitializingBean, ApplicationListener<ApplicationEvent> {
 
@@ -370,6 +371,9 @@ public class HopeSqlSessionFactoryBean implements FactoryBean<SqlSessionFactory>
 				this.logger.debug("Property 'configLocation' not specified, using default MyBatis Configuration");
 			}
 			configuration = new Configuration();
+			// 增加分页拦截器
+			Interceptor interceptorInstance = (Interceptor) new PageInterceptor();
+			configuration.addInterceptor(interceptorInstance);
 			// 如果没有配置configLocation,走默认配置，驼峰转换下划线
 			configuration.setMapUnderscoreToCamelCase(true);
 			configuration.setVariables(this.configurationProperties);
@@ -462,7 +466,7 @@ public class HopeSqlSessionFactoryBean implements FactoryBean<SqlSessionFactory>
 		}
 
 		if (!isEmpty(this.mapperLocations)) {
-			HopeMappperBuiler2 hopeMappperBuiler = new HopeMappperBuiler2();
+			HopeMappperBuiler hopeMappperBuiler = new HopeMappperBuiler();
 			for (Resource mapperLocation : this.mapperLocations) {
 				if (mapperLocation == null) {
 					continue;

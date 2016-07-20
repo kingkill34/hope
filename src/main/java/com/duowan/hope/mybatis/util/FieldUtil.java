@@ -61,21 +61,18 @@ public class FieldUtil {
 		return sb.toString();
 	}
 
-	public static String toCapitalizeCamelCase(String s) {
+	public static String toLowerCamelCase(String s) {
 		if (s == null) {
 			return null;
 		}
-		s = toCamelCase(s);
-		return s.substring(0, 1).toUpperCase() + s.substring(1);
+		return s.substring(0, 1).toLowerCase() + s.substring(1);
 	}
-	
-	
-	
 
 	public static void main(String[] args) {
 		System.out.println(toUnderlineName("ISOCertifiedStaff"));
 		System.out.println(toUnderlineName("CertifiedStaff"));
 		System.out.println(toUnderlineName("userID"));
+		System.out.println(toLowerCamelCase("UserId"));
 		System.out.println(toCamelCase("iso_certified_staff"));
 		System.out.println(toCamelCase("certified_staff"));
 		System.out.println(toCamelCase("user_id"));
