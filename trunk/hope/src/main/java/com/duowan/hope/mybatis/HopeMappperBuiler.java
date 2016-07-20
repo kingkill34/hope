@@ -3,49 +3,52 @@ package com.duowan.hope.mybatis;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.ibatis.type.Alias;
+import org.apache.ibatis.type.TypeAliasRegistry;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.StringUtils;
 
-import com.duowan.hope.mybatis.annotation.Entity;
+import com.duowan.hope.mybatis.annotation.HopeCount;
+import com.duowan.hope.mybatis.annotation.HopeDelete;
+import com.duowan.hope.mybatis.annotation.HopeInsert;
+import com.duowan.hope.mybatis.annotation.HopeSelect;
+import com.duowan.hope.mybatis.annotation.HopeUpdate;
 import com.duowan.hope.mybatis.annotation.Table;
 import com.duowan.hope.mybatis.database.DataBaseFieldInfo;
-import com.duowan.hope.mybatis.initparams.MapperParams;
-import com.duowan.hope.mybatis.initparams.SqlField;
+import com.duowan.hope.mybatis.initparams.MethodInfo;
+import com.duowan.hope.mybatis.initparams.TableInfo;
 
 public class HopeMappperBuiler {
 
+	protected TypeAliasRegistry typeAliasRegistry;
+
 	private static final String NAME_SPACE = "namespace";
 	private static final String UTF_8 = "utf-8";
-	private static final String COMMA = ",";
 	private static final String COLUMN_NAME = "COLUMN_NAME";
+	public static final Set<String> CONSTANT = new HashSet<String>();
+	private static Set<String> PRIMARY_KEY = new HashSet<>();
+	private String genericReturnType;
 
-	private List<DataBaseFieldInfo> getTableColumn(Connection connection, String tableName) {
-		List<DataBaseFieldInfo> columns = new ArrayList<DataBaseFieldInfo>();
-		try {
-			DatabaseMetaData databaseMetaData = connection.getMetaData();
-			ResultSet resultSet = databaseMetaData.getColumns(null, null, tableName, "%");
-			while (resultSet.next()) {
-				DataBaseFieldInfo dataBaseFieldInfo = new DataBaseFieldInfo(resultSet.getString(COLUMN_NAME), resultSet.getString("TYPE_NAME"));
-				columns.add(dataBaseFieldInfo);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return columns;
-	}
+	public InputStream build(String resource, Connection connection, TypeAliasRegistry typeAliasRegistry) {
+		this.typeAliasRegistry = typeAliasRegistry;
 
-	public InputStream build(String resource, Connection connection) {
 		InputStream inputStream = null;
 
 		Document document = getDocument(resource);
@@ -65,7 +68,8 @@ public class HopeMappperBuiler {
 		return inputStream;
 	}
 
-	public InputStream build(File file, Connection connection) {
+	public InputStream build(File file, Connection connection, TypeAliasRegistry typeAliasRegistry) {
+		this.typeAliasRegistry = typeAliasRegistry;
 		InputStream inputStream = null;
 
 		Document document = getDocument(file);
@@ -114,145 +118,238 @@ public class HopeMappperBuiler {
 		return document;
 	}
 
-	private String getTableName(Element root) throws ClassNotFoundException {
-		String tableName = "";
-		String namespace = root.attributeValue(NAME_SPACE);
-		Class<?> daoClz = Class.forName(namespace);
-		Entity annotation = (Entity) daoClz.getAnnotation(Entity.class);
-		if (annotation != null) {
-			Class<?> entityClz = annotation.value();
-			Alias AliasClz = (Alias) entityClz.getAnnotation(Alias.class);
-			tableName = AliasClz.value();
+	private Annotation getHopeAnnotation(Method method) {
+		Annotation annotation = method.getAnnotation(HopeSelect.class);
+		if (annotation == null) {
+			annotation = method.getAnnotation(HopeCount.class);
 		}
-		return tableName;
+
+		if (annotation == null) {
+			annotation = method.getAnnotation(HopeInsert.class);
+		}
+
+		if (annotation == null) {
+			annotation = method.getAnnotation(HopeDelete.class);
+		}
+
+		if (annotation == null) {
+			annotation = method.getAnnotation(HopeUpdate.class);
+		}
+
+		return annotation;
+	}
+
+	/**
+	 * 获取泛型返回对象
+	 */
+	private void getGenericReturnType(Class<?> daoClz) {
+		this.genericReturnType = null;
+		Type[] types = daoClz.getGenericInterfaces();
+		for (Type type : types) {
+			Type[] params = ((ParameterizedType) type).getActualTypeArguments();
+			if (null != params && params.length > 0) {
+				Class<?> entityClass = (Class<?>) params[0];
+				this.genericReturnType = entityClass.getName();
+			}
+		}
+
+	}
+
+	private List<Method> getMethod(Class<?> daoClz) {
+		List<Method> list = null;
+		if (null != daoClz) {
+			// 获取接口本身的方法
+			list = new ArrayList<>();
+			Method[] methods = daoClz.getDeclaredMethods();
+			for (Method method : methods) {
+				list.add(method);
+			}
+			// 父接口
+			Class<?>[] superInterfaces = daoClz.getInterfaces();
+			for (Class<?> clz : superInterfaces) {
+				list.addAll(getMethod(clz));
+			}
+		}
+		return list;
 	}
 
 	private void buildSqls(Element root, Connection connection) throws ClassNotFoundException {
+		String namespace = root.attributeValue(NAME_SPACE);
+		Class<?> daoClz = Class.forName(namespace);
 
-		String tableName = getTableName(root);
-		if (!StringUtils.isEmpty(tableName)) {
-			List<DataBaseFieldInfo> columns = getTableColumn(connection, tableName);
+		getGenericReturnType(daoClz);
+		List<Method> methods = getMethod(daoClz);
 
-			MapperParams mapperParams = getMapperParams(columns, tableName);
-			// 构建常用SQL
-			bulidGet(root, mapperParams, tableName);
-			bulidGetList(root, mapperParams, tableName);
-			buildCount(root, mapperParams, tableName);
-			buildCountDistinct(root, mapperParams, tableName);
-			buildInsert(root, mapperParams, tableName);
-			buildInsertByTns(root, mapperParams, tableName);
-			buildDelete(root, mapperParams, tableName);
-			buildUpdate(root, mapperParams, tableName);
+		TableInfo tableInfo = getTableInfo(daoClz);
 
+		Map<String, DataBaseFieldInfo> columns = getTableColumn(connection, tableInfo.getTableNameUnderLine());
+
+		for (Method method : methods) {
+			Annotation annotation = getHopeAnnotation(method);
+			MethodInfo methodInfo = new MethodInfo(method, annotation, columns, typeAliasRegistry, tableInfo, this.genericReturnType, namespace);
+			if (annotation != null) {
+				// build select
+				if (methodInfo.getType().equals(HopeSelect.class.getSimpleName())) {
+					buildSelect(methodInfo, root);
+					continue;
+				}
+
+				// build count
+				if (methodInfo.getType().equals(HopeCount.class.getSimpleName())) {
+					buildCount(methodInfo, root);
+					continue;
+				}
+
+				// build insert
+				if (methodInfo.getType().equals(HopeInsert.class.getSimpleName())) {
+					buildInsert(methodInfo, root);
+					continue;
+				}
+
+				// build insert
+				if (methodInfo.getType().equals(HopeDelete.class.getSimpleName())) {
+					buildDelete(methodInfo, root);
+					continue;
+				}
+
+				// build update
+				if (methodInfo.getType().equals(HopeUpdate.class.getSimpleName())) {
+					buildUpdate(methodInfo, root);
+					continue;
+				}
+
+			}
 		}
 
 	}
 
-	private void bulidGet(Element root, MapperParams mapperParams, String tableName) {
-		buildGets(root, mapperParams, tableName, MapperTagReources.GET);
-	}
+	private void buildUpdate(MethodInfo methodInfo, Element root) {
+		String set = methodInfo.getUpdate();
+		String where = methodInfo.getWhere();
+		String tableName = methodInfo.getTableName();
+		String tableSuffix = methodInfo.getTableSuffix();
 
-	private void bulidGetList(Element root, MapperParams mapperParams, String tableName) {
-		buildGets(root, mapperParams, tableName, MapperTagReources.GET_LIST);
-	}
-
-	private void buildGets(Element root, MapperParams mapperParams, String tableName, String id) {
-		StringBuffer where = new StringBuffer();
-
-		List<SqlField> sqlFieldList = mapperParams.getSqlFidldList();
-
-		for (SqlField sqlField : sqlFieldList) {
-			where.append(getWhereSql(sqlField));
-		}
-
-		String context = String.format(MapperTagReources.SQL_SELECT, mapperParams.getSelectFields(), tableName, where.toString());
-		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_SELECT);
-		setElementAttr(element, id, MapperTagReources.MAP, tableName, context);
-	}
-
-	private void buildCount(Element root, MapperParams mapperParams, String tableName) {
-		buildCounts(root, mapperParams, tableName, MapperTagReources.COUNT, MapperTagReources.SQL_SELECT_COUNT);
-	}
-
-	private void buildCountDistinct(Element root, MapperParams mapperParams, String tableName) {
-		buildCounts(root, mapperParams, tableName, MapperTagReources.COUNT_DISTINCT, MapperTagReources.SQL_SELECT_DISTINCT_COUNT);
-	}
-
-	private void buildCounts(Element root, MapperParams mapperParams, String tableName, String id, String tag) {
-		StringBuffer where = new StringBuffer();
-
-		List<SqlField> sqlFieldList = mapperParams.getSqlFidldList();
-
-		for (SqlField sqlField : sqlFieldList) {
-			where.append(getWhereSql(sqlField));
-		}
-
-		String context = String.format(tag, tableName, where.toString());
-		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_SELECT);
-		setElementAttr(element, id, MapperTagReources.MAP, MapperTagReources.INTEGER, context);
-	}
-
-	private void buildInsert(Element root, MapperParams mapperParams, String tableName) {
-		StringBuffer values = new StringBuffer();
-		StringBuffer fields = new StringBuffer();
-
-		List<SqlField> sqlFieldList = mapperParams.getSqlFidldList();
-		for (SqlField sqlField : sqlFieldList) {
-			values.append(getInsertValueSql(sqlField));
-			fields.append(getInsertFieldSql(sqlField));
-		}
-
-		String context = String.format(MapperTagReources.SQL_INSERT, tableName, fields.toString(), values.toString());
-		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_INSERT);
-		setElementAttr(element, MapperTagReources.INSERT, tableName, null, context);
-
-	}
-
-	// buildInsertByTableNameSuffixes
-	private void buildInsertByTns(Element root, MapperParams mapperParams, String tableName) {
-		StringBuffer values = new StringBuffer();
-		StringBuffer fields = new StringBuffer();
-
-		List<SqlField> sqlFieldList = mapperParams.getSqlFidldList();
-		for (SqlField sqlField : sqlFieldList) {
-			values.append(getInsertValueSql(sqlField));
-			fields.append(getInsertFieldSql(sqlField));
-		}
-		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_INSERT);
-		String context = String.format(MapperTagReources.SQL_INSERT_BY_TABLENAME_SUFFIXES, tableName, fields.toString(), values.toString());
-		setElementAttr(element, MapperTagReources.INSERT_BY_TABLENAME_SUFFIXES, MapperTagReources.MAP, null, context);
-
-	}
-
-	private void buildDelete(Element root, MapperParams mapperParams, String tableName) {
-		StringBuffer sb = new StringBuffer();
-
-		List<SqlField> sqlFieldList = mapperParams.getSqlFidldList();
-		for (SqlField sqlField : sqlFieldList) {
-			sb.append(getWhereSql(sqlField));
-		}
-
+		String context = String.format(MapperTagReources.SQL_UPDATE, tableName, tableSuffix, set, where);
 		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_DELETE);
-		String context = String.format(MapperTagReources.SQL_DELETE, tableName, sb.toString());
-		setElementAttr(element, MapperTagReources.DELETE, MapperTagReources.MAP, null, context);
+		setElementAttr(element, methodInfo.getId(), null, null, context, null, null);
 	}
 
-	private void buildUpdate(Element root, MapperParams mapperParams, String tableName) {
-		StringBuffer selectFields = new StringBuffer();
-		StringBuffer where = new StringBuffer();
+	private void buildDelete(MethodInfo methodInfo, Element root) {
 
-		List<SqlField> sqlFieldList = mapperParams.getSqlFidldList();
-		for (SqlField sqlField : sqlFieldList) {
-			selectFields.append(getUpdateSql(sqlField));
-			where.append(getWhereSql(sqlField));
+		String where = methodInfo.getWhere();
+		String tableName = methodInfo.getTableName();
+		String tableSuffix = methodInfo.getTableSuffix();
+
+		String context = String.format(MapperTagReources.SQL_DELETE, tableName, tableSuffix, where);
+		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_DELETE);
+		setElementAttr(element, methodInfo.getId(), null, null, context, null, null);
+	}
+
+	private void buildInsert(MethodInfo methodInfo, Element root) {
+
+		String insertField = methodInfo.getInsertField();
+		String insertValue = methodInfo.getInsertValue();
+		String tableName = methodInfo.getTableName();
+		String tableSuffix = methodInfo.getTableSuffix();
+		String isReturnPrimaryKey = "";
+		String primaryKey = "";
+
+		String formatStr = MapperTagReources.SQL_INSERT;
+		if (methodInfo.isCollection()) {
+			formatStr = MapperTagReources.SQL_BATCH_INSERT_LIST;
 		}
 
-		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_UPDATE);
-		String context = String.format(MapperTagReources.SQL_UPDATE, tableName, selectFields.toString(), where.toString());
-		setElementAttr(element, MapperTagReources.UPDATE, MapperTagReources.MAP, null, context);
+		if (methodInfo.isArray()) {
+			formatStr = MapperTagReources.SQL_BATCH_INSERT_ARRAY;
+		}
+
+		if (methodInfo.isReturnPrimaryKey()) {
+			isReturnPrimaryKey = "true";
+			primaryKey = methodInfo.getPrimaryKey();
+		}
+
+		String context = String.format(formatStr, tableName, tableSuffix, insertField, insertValue);
+		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_INSERT);
+		setElementAttr(element, methodInfo.getId(), methodInfo.getParamterType(), null, context, isReturnPrimaryKey, primaryKey);
 	}
 
-	private void setElementAttr(Element element, String mapperId, String parameterType, String resultType, String context) {
+	private void buildCount(MethodInfo methodInfo, Element root) {
+
+		String selectFields = methodInfo.getSelectCountFields();
+		String where = methodInfo.getWhere();
+		String groupBy = methodInfo.getGroupBy();
+		String orderBy = methodInfo.getOrderBy();
+		String tableName = methodInfo.getTableName();
+		String tableSuffix = methodInfo.getTableSuffix();
+
+		String context = String.format(MapperTagReources.SQL_SELECT, selectFields, tableName, tableSuffix, where, groupBy, orderBy);
+		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_SELECT);
+		setElementAttr(element, methodInfo.getId(), null, methodInfo.getReturnType(), context, null, null);
+	}
+
+	private void buildSelect(MethodInfo methodInfo, Element root) {
+
+		String selectFields = methodInfo.getSelectFields();
+		String where = methodInfo.getWhere();
+		String groupBy = methodInfo.getGroupBy();
+		String orderBy = methodInfo.getOrderBy();
+		String tableName = methodInfo.getTableName();
+		String tableSuffix = methodInfo.getTableSuffix();
+
+		String sql = String.format(MapperTagReources.SQL_SELECT, selectFields, tableName, tableSuffix, where, groupBy, orderBy);
+		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_SELECT);
+		setElementAttr(element, methodInfo.getId(), null, methodInfo.getReturnType(), sql, null, null);
+	}
+
+	private TableInfo getTableInfo(Class<?> daoClz) {
+		TableInfo tableInfo = null;
+		Table table = (Table) daoClz.getDeclaredAnnotation(Table.class);
+		if (null != table) {
+			tableInfo = new TableInfo(table);
+		}
+		return tableInfo;
+	}
+
+	private TreeMap<String, DataBaseFieldInfo> getTableColumn(Connection connection, String tableName) {
+		TreeMap<String, DataBaseFieldInfo> columns = new TreeMap<>();
+		String columnName = "";
+		String typeName = "";
+		String nullAble = "";
+		String defaultValue = "";
+		String autoincrement = "";
+		boolean isPrimaryKey = false;
+
+		try {
+			DatabaseMetaData databaseMetaData = connection.getMetaData();
+			ResultSet primaryKeys = databaseMetaData.getPrimaryKeys(null, null, tableName);
+			while (primaryKeys.next()) {
+				PRIMARY_KEY.add(primaryKeys.getString(COLUMN_NAME).toLowerCase());
+			}
+			ResultSet resultSet = databaseMetaData.getColumns(null, null, tableName, "%");
+			while (resultSet.next()) {
+				isPrimaryKey = false;
+				columnName = resultSet.getString(COLUMN_NAME).toLowerCase();
+				typeName = resultSet.getString("TYPE_NAME");
+				nullAble = resultSet.getString("IS_NULLABLE"); // 是否允许NULL
+				defaultValue = resultSet.getString("COLUMN_DEF"); // 字段默认值
+				autoincrement = resultSet.getString("IS_AUTOINCREMENT"); // 是否自增长
+
+				// 是否为主键
+				if (PRIMARY_KEY.contains(columnName)) {
+					isPrimaryKey = true;
+				}
+
+				DataBaseFieldInfo dataBaseFieldInfo = new DataBaseFieldInfo(columnName, typeName, nullAble, defaultValue, autoincrement, isPrimaryKey);
+				columns.put(columnName, dataBaseFieldInfo);
+
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return columns;
+	}
+
+	private void setElementAttr(Element element, String mapperId, String parameterType, String resultType, String context, String useGeneratedKeys, String keyProperty) {
 		if (!StringUtils.isEmpty(mapperId)) {
 			element.addAttribute(MapperTagReources.MAPPER_ID, mapperId);
 		}
@@ -262,69 +359,13 @@ public class HopeMappperBuiler {
 		if (!StringUtils.isEmpty(resultType)) {
 			element.addAttribute(MapperTagReources.MAPPER_RESULT_TYPE, resultType);
 		}
+		if (!StringUtils.isEmpty(useGeneratedKeys)) {
+			element.addAttribute(MapperTagReources.USE_GENERATED_KEYS, useGeneratedKeys);
+		}
+		if (!StringUtils.isEmpty(keyProperty)) {
+			element.addAttribute(MapperTagReources.KEY_PROPERTY, keyProperty);
+		}
+
 		element.setText(context);
 	}
-
-	private MapperParams getMapperParams(List<DataBaseFieldInfo> columns, String tableName) {
-		List<SqlField> SqlFieldList = null;
-		StringBuffer selectFields = null;
-		if (null != columns && columns.size() > 0) {
-			selectFields = new StringBuffer();
-			SqlFieldList = new ArrayList<SqlField>();
-			int fieldsLength = columns.size();
-			for (int i = 0; i < fieldsLength; i++) {
-				DataBaseFieldInfo dataBaseFieldInfo = columns.get(i);
-				String fieldName = dataBaseFieldInfo.getFieldName();
-
-				String comma = getComma(fieldsLength, i);
-				SqlField sqlField = new SqlField(fieldName, comma, tableName, dataBaseFieldInfo.getFieldType());
-				SqlFieldList.add(sqlField);
-
-				selectFields.append(fieldName + comma);
-			}
-		}
-
-		return new MapperParams(selectFields.toString(), SqlFieldList);
-	}
-
-	private String getComma(Integer length, Integer i) {
-		String comma = "";
-		if (i != length - 1) {
-			comma = COMMA;
-		}
-		return comma;
-	}
-
-	private String getInsertFieldSql(SqlField sqlField) {
-		String fieleName = sqlField.getFieldName();
-		return String.format(MapperTagReources.MAPPER_IF, fieleName, fieleName, sqlField.getFieldNameSource());
-	}
-
-	private String getInsertValueSql(SqlField sqlField) {
-		String fieleName = sqlField.getFieldName();
-		if (sqlField.isNum()) {
-			return String.format(MapperTagReources.MAPPER_IF_VALUE, fieleName, fieleName, fieleName);
-		} else {
-			return String.format(MapperTagReources.MAPPER_IF_VALUE_FOR_NUM, fieleName, fieleName);
-		}
-	}
-
-	private String getWhereSql(SqlField sqlField) {
-		String whereFieldName = sqlField.getWhereFieldName();
-		if (sqlField.isNum()) {
-			return String.format(MapperTagReources.MAPPER_WHERE_IF_FOR_NUM, whereFieldName, sqlField.getFieldNameSource(), sqlField.getWhereOperation(), whereFieldName);
-		} else {
-			return String.format(MapperTagReources.MAPPER_WHERE_IF, whereFieldName, whereFieldName, sqlField.getFieldNameSource(), sqlField.getWhereOperation(), whereFieldName);
-		}
-	}
-
-	private String getUpdateSql(SqlField sqlField) {
-		String fieldName = sqlField.getFieldName();
-		if (sqlField.isNum()) {
-			return String.format(MapperTagReources.MAPPER_UPDATE_IF_FOR_NUM, fieldName, sqlField.getFieldNameSource(), fieldName);
-		} else {
-			return String.format(MapperTagReources.MAPPER_UPDATE_IF, fieldName, fieldName, sqlField.getFieldNameSource(), fieldName);
-		}
-	}
-
 }

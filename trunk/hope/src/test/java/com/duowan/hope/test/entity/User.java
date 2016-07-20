@@ -1,5 +1,7 @@
 package com.duowan.hope.test.entity;
 
+import java.util.Date;
+
 public class User {
 
 	/**
@@ -18,6 +20,10 @@ public class User {
 	private String testField;
 
 	private String gameId;
+
+	private Date date;
+
+	private String ts;
 
 	public Integer getId() {
 		return id;

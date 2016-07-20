@@ -14,4 +14,9 @@ public @interface Table {
 	String tableSuffix() default "";
 
 	String tableSeparator() default "_";
+
+	int currenyPage() default 1;
+
+	int page() default 1;
+
 }

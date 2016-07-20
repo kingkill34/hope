@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -19,8 +20,10 @@ import org.springframework.util.StringUtils;
 
 import com.duowan.hope.mybatis.MapperTagReources;
 import com.duowan.hope.mybatis.annotation.HopeSelect;
+import com.duowan.hope.mybatis.annotation.HopeUpdate;
 import com.duowan.hope.mybatis.annotation.OP;
 import com.duowan.hope.mybatis.database.DataBaseFieldInfo;
+import com.duowan.hope.mybatis.page.HopePage;
 import com.duowan.hope.mybatis.util.FieldUtil;
 
 public class MethodInfo {
@@ -30,10 +33,10 @@ public class MethodInfo {
 
 	public static final Map<String, String> COLLECTION_TYPE = new HashMap<String, String>(); // 基础类型
 
-	private List<DataBaseFieldInfo> dataBaseFieldInfoList; // 组装SQL需要用到的字段
-
 	private Map<String, DataBaseFieldInfo> prefixFiels;
 	private Map<String, DataBaseFieldInfo> suffixFiels;
+
+	private String genericReturnType;
 
 	private String id; // 对应mybatis 方法的ID
 
@@ -57,7 +60,15 @@ public class MethodInfo {
 
 	private boolean isVoOrPo;
 
-	boolean isCollection;
+	private boolean isCollection;
+
+	private boolean isArray;
+
+	// 是否返回主键
+	private boolean returnPrimaryKey;
+
+	// 主键名称
+	private String primaryKey;
 
 	// 表名相关信息
 	private TableInfo tableInfo;
@@ -68,6 +79,7 @@ public class MethodInfo {
 		BASE_TYPE.add(String.class.getName());
 		BASE_TYPE.add(HashMap.class.getName());
 		BASE_TYPE.add(Boolean.class.getName());
+		BASE_TYPE.add(Date.class.getName());
 		BASE_TYPE.add(double.class.getName());
 		BASE_TYPE.add(int.class.getName());
 		BASE_TYPE.add(boolean.class.getName());
@@ -79,7 +91,6 @@ public class MethodInfo {
 		COLLECTION_TYPE.put(HashMap.class.getName(), Map.class.getName());
 		COLLECTION_TYPE.put(LinkedHashMap.class.getName(), Map.class.getName());
 		COLLECTION_TYPE.put(TreeMap.class.getName(), Map.class.getName());
-
 	}
 
 	/**
@@ -91,18 +102,63 @@ public class MethodInfo {
 	 * @param typeAliasRegistry
 	 * @param tableInfo
 	 */
-	public MethodInfo(Method method, Annotation annotation, Map<String, DataBaseFieldInfo> columns, TypeAliasRegistry typeAliasRegistry, TableInfo tableInfo) {
+	public MethodInfo(Method method, Annotation annotation, Map<String, DataBaseFieldInfo> columns, TypeAliasRegistry typeAliasRegistry, TableInfo tableInfo, String genericReturnType, String namespace) {
 		this.typeAliasRegistry = typeAliasRegistry;
+		this.genericReturnType = genericReturnType;
 		this.tableInfo = tableInfo;
 		this.id = method.getName();
 		setAnnotationInfo(annotation);
 		setType(annotation);
+		setPrimaryKey(columns);
+
 		this.returnType = getReturnType(method);
+		setPageMethodInfo(method, namespace);
+		if (!StringUtils.isEmpty(this.type)) {
+			setPrefixFiels(method, columns);
+			setSuffixFiels(method, columns);
+		}
 
-		setPrefixFiels(method, columns);
-		setSuffixFiels(method, columns);
+	}
 
-		// setDataBaseFieldInfoList(method, columns);
+	/**
+	 * 设置分页方法信息
+	 * 
+	 * @param method
+	 */
+	private void setPageMethodInfo(Method method, String namespace) {
+		if (this.returnType.equals(HopePage.class.getName())) {
+			this.returnType = this.genericReturnType;
+			MethodPage methodPage = new MethodPage();
+			methodPage.setId(namespace + "." + method.getName());
+			Parameter[] parameters = method.getParameters();
+
+			int count = 1;
+			for (Parameter parameter : parameters) {
+				if (parameter.getName().equals("pageSize")) {
+					methodPage.setPageSize("param" + count);
+				}
+
+				if (parameter.getName().equals("pageNo")) {
+					methodPage.setPageNo("param" + count);
+				}
+				count++;
+			}
+			MethodPageInfo.put(methodPage);
+		}
+	}
+
+	/**
+	 * 获取主键
+	 * 
+	 * @param columns
+	 */
+	private void setPrimaryKey(Map<String, DataBaseFieldInfo> columns) {
+		for (Map.Entry<String, DataBaseFieldInfo> entry : columns.entrySet()) {
+			DataBaseFieldInfo dataBaseFieldInfo = entry.getValue();
+			if (dataBaseFieldInfo.isAutoincrement() && dataBaseFieldInfo.isPrimaryKey()) {
+				this.primaryKey = dataBaseFieldInfo.getFieldNameCamelCase();
+			}
+		}
 	}
 
 	private RegisterAliasInfo setParamterType(String typeName) {
@@ -137,13 +193,98 @@ public class MethodInfo {
 	 */
 	private void setPrefixFiels(Method method, Map<String, DataBaseFieldInfo> columns) {
 		prefixFiels = new TreeMap<String, DataBaseFieldInfo>();
-		if (!StringUtils.isEmpty(value)) {
-			String[] values = this.value.split(",");
-			for (String v : values) {
-				prefixFiels.put(v, columns.get(v));
+		Parameter[] parameters = method.getParameters();
+		// 如果类型是HopeSelect并且配置了value,查询字段变成value
+		if (this.type.equals(HopeSelect.class.getSimpleName())) {
+			if (!StringUtils.isEmpty(value)) {
+				String[] values = this.value.split(",");
+				for (String v : values) {
+					prefixFiels.put(v, columns.get(FieldUtil.toUnderlineName(v)));
+				}
+			} else {
+				prefixFiels = columns;
 			}
+
+		} else if (this.type.equals(HopeUpdate.class.getSimpleName())) { // 查询条件不需要更新
+			String[] values = new String[] {};
+			if (!StringUtils.isEmpty(value)) {
+				values = this.value.split(",");
+			}
+
+			for (int i = 1; i <= parameters.length; i++) {
+
+				Parameter parameter = parameters[i - 1];
+
+				String fieldName = FieldUtil.toUnderlineName(parameter.getName());
+
+				// 获取参数类型
+				String typeName = parameter.getParameterizedType().getTypeName();
+				// 设置传入方法类型
+				RegisterAliasInfo registerAliasInfo = setParamterType(typeName);
+
+				if (null == registerAliasInfo) {
+					OP op = parameter.getAnnotation(OP.class);
+					if (null != op && op.isUpdate() == true) {
+						DataBaseFieldInfo dataBaseFieldInfo = columns.get(fieldName);
+						dataBaseFieldInfo.setEntityParam(false);
+						dataBaseFieldInfo.setFieldIndex(i);
+						prefixFiels.put(fieldName, dataBaseFieldInfo);
+					} else {
+						prefixFiels.remove(fieldName);
+					}
+				} else {
+
+					Field[] fields = registerAliasInfo.getClz().getDeclaredFields();
+
+					// 更新排除WHERE字段
+					for (Map.Entry<String, DataBaseFieldInfo> entry : columns.entrySet()) {
+
+						// 查看是否为条件字段
+						for (String v : values) {
+							if (FieldUtil.toUnderlineName(v).equals(entry.getKey())) {
+								continue;
+							}
+						}
+
+						// 需要更新的字段
+						for (Field field : fields) {
+							fieldName = FieldUtil.toUnderlineName(field.getName());
+							if (fieldName.equals(entry.getKey())) {
+								DataBaseFieldInfo dataBaseFieldInfo = columns.get(fieldName);
+								dataBaseFieldInfo.setFieldIndex(i);
+								dataBaseFieldInfo.setEntityParam(true);
+								if (null != parameters && parameters.length == 1) {
+									dataBaseFieldInfo.setSingleParam(true);
+								} else {
+									dataBaseFieldInfo.setSingleParam(false);
+								}
+								prefixFiels.put(fieldName, dataBaseFieldInfo);
+							}
+						}
+
+					}
+				}
+			}
+
 		} else {
-			prefixFiels = columns;
+			for (Parameter parameter : parameters) {
+				String fieldName = FieldUtil.toUnderlineName(parameter.getName());
+				// 获取参数类型
+				String typeName = parameter.getParameterizedType().getTypeName();
+				// 设置传入方法类型
+				RegisterAliasInfo registerAliasInfo = setParamterType(typeName);
+				if (null == registerAliasInfo) {
+					prefixFiels.put(fieldName, columns.get(fieldName));
+				} else {
+					Field[] fields = registerAliasInfo.getClz().getDeclaredFields();
+					for (Field field : fields) {
+						fieldName = FieldUtil.toUnderlineName(field.getName());
+						prefixFiels.put(fieldName, columns.get(fieldName));
+					}
+				}
+
+			}
+
 		}
 
 	}
@@ -158,89 +299,91 @@ public class MethodInfo {
 		suffixFiels = new TreeMap<String, DataBaseFieldInfo>();
 		Parameter[] parameters = method.getParameters();
 
-		int count = 1;
-		for (Parameter parameter : parameters) {
-			// 获取参数类型
-			String typeName = parameter.getParameterizedType().getTypeName();
-			// 设置传入方法类型
-			RegisterAliasInfo registerAliasInfo = setParamterType(typeName);
+		// 如果类型是HopeUpdate
+		if (this.type.equals(HopeUpdate.class.getSimpleName())) {
+			setUpdateSuffixFiels(parameters, columns);
+		} else {
+			int count = 1;
+			for (Parameter parameter : parameters) {
+				// 获取参数类型
+				String typeName = parameter.getParameterizedType().getTypeName();
+				// 设置传入方法类型
+				RegisterAliasInfo registerAliasInfo = setParamterType(typeName);
 
-			String fieldName = FieldUtil.toUnderlineName(parameter.getName());
-			// 如果参数类型为基础类型
-			if (null == registerAliasInfo) {
-				OP op = parameter.getAnnotation(OP.class);
-				if (columns.containsKey(fieldName)) {
-					DataBaseFieldInfo dataBaseFieldInfo = columns.get(fieldName);
-					dataBaseFieldInfo.setEntityParam(false);
-					dataBaseFieldInfo.setOp(op);
-					dataBaseFieldInfo.setFieldIndex(count);
-					suffixFiels.put(fieldName, dataBaseFieldInfo);
-					count++;
-				}
-			} else { // 如果参数是对象
-				Field[] fields = registerAliasInfo.getClz().getDeclaredFields();
-				for (Field field : fields) {
-					fieldName = FieldUtil.toUnderlineName(field.getName());
+				String fieldName = FieldUtil.toUnderlineName(parameter.getName());
+				// 如果参数类型为基础类型
+				if (null == registerAliasInfo) {
+					OP op = parameter.getAnnotation(OP.class);
 					if (columns.containsKey(fieldName)) {
 						DataBaseFieldInfo dataBaseFieldInfo = columns.get(fieldName);
-						dataBaseFieldInfo.setEntityParam(true);
+						dataBaseFieldInfo.setEntityParam(false);
+						dataBaseFieldInfo.setListOrArray(isArray);
+						dataBaseFieldInfo.setOp(op);
+						dataBaseFieldInfo.setFieldIndex(count);
 						suffixFiels.put(fieldName, dataBaseFieldInfo);
+						count++;
+					}
+				} else { // 如果参数是对象
+					Field[] fields = registerAliasInfo.getClz().getDeclaredFields();
+					for (Field field : fields) {
+						fieldName = FieldUtil.toUnderlineName(field.getName());
+						if (columns.containsKey(fieldName)) {
+							DataBaseFieldInfo dataBaseFieldInfo = columns.get(fieldName);
+							dataBaseFieldInfo.setEntityParam(true);
+							suffixFiels.put(fieldName, dataBaseFieldInfo);
+						}
 					}
 				}
-			}
 
+			}
 		}
 	}
 
-	/**
-	 * 过滤参数，必须要跟表的字段对应上
-	 * 
-	 * @param parameters
-	 */
-	private void setDataBaseFieldInfoList(Method method, Map<String, DataBaseFieldInfo> columns) {
-		dataBaseFieldInfoList = new ArrayList<>();
-		Parameter[] parameters = method.getParameters();
-		Integer parametersLength = parameters == null ? 0 : parameters.length;
+	private void setUpdateSuffixFiels(Parameter[] parameters, Map<String, DataBaseFieldInfo> columns) {
+		if (!StringUtils.isEmpty(value)) {
+			String[] values = this.value.split(",");
+			for (String v : values) {
+				DataBaseFieldInfo dataBaseFieldInfo = columns.get(FieldUtil.toUnderlineName(v));
 
-		// 如果参数只有一个,考虑不是基础类型
-		if (parametersLength == 1) {
-			// 获取参数类型
-			String typeName = parameters[0].getParameterizedType().getTypeName();
+				if (null != parameters && parameters.length == 1) {
+					dataBaseFieldInfo.setSingleParam(true);
+					dataBaseFieldInfo.setEntityParam(true);
+				}
+				suffixFiels.put(v, dataBaseFieldInfo);
+			}
+		} else {
+			int count = 1;
+			for (Parameter parameter : parameters) {
+				// 获取参数类型
+				String typeName = parameter.getParameterizedType().getTypeName();
+				// 设置传入方法类型
+				RegisterAliasInfo registerAliasInfo = setParamterType(typeName);
 
-			// 设置传入方法类型
-			RegisterAliasInfo registerAliasInfo = setParamterType(typeName);
+				// 如果参数类型为基础类型
+				if (null == registerAliasInfo) {
+					String fieldName = FieldUtil.toUnderlineName(parameter.getName());
+					OP op = parameter.getAnnotation(OP.class);
 
-			// 如果是VO或者PO，把字段取出来当参数,
-			// 一般来说会用VO PO做参数的，只会是插入数据或者更新
-			// 取出对象的字段，和数据库中的字段进行对比，匹配的拿来做SQL的参数
-			if (isVoOrPo) {
-				Field[] fields = registerAliasInfo.getClz().getDeclaredFields();
-				for (Field field : fields) {
-					String underLineFieldName = FieldUtil.toUnderlineName(field.getName());
-					if (columns.containsKey(underLineFieldName)) {
-						DataBaseFieldInfo dataBaseFieldInfo = columns.get(underLineFieldName);
-						dataBaseFieldInfoList.add(dataBaseFieldInfo);
+					// 如果字段是标记更新字段，跳过
+					if (null != op && op.isUpdate() == true) {
+						count++;
+						continue;
+					}
+
+					if (columns.containsKey(fieldName)) {
+						DataBaseFieldInfo dataBaseFieldInfo = columns.get(fieldName);
+						dataBaseFieldInfo.setEntityParam(false);
+						dataBaseFieldInfo.setOp(op);
+						dataBaseFieldInfo.setFieldIndex(count);
+						suffixFiels.put(fieldName, dataBaseFieldInfo);
+
 					}
 				}
+				count++;
+
 			}
 		}
 
-		// 如果不是实体类,并且parameters ==0 or parameters.size>1
-		if (!isVoOrPo) {
-			int count = 0;
-			for (Parameter parameter : parameters) {
-				String fieldName = FieldUtil.toUnderlineName(parameter.getName());
-				OP op = parameter.getAnnotation(OP.class);
-				if (columns.containsKey(fieldName)) {
-					DataBaseFieldInfo dataBaseFieldInfo = columns.get(fieldName);
-					dataBaseFieldInfo.setOp(op);
-					dataBaseFieldInfo.setFieldIndex(count);
-					dataBaseFieldInfoList.add(dataBaseFieldInfo);
-					count++;
-				}
-			}
-
-		}
 	}
 
 	/**
@@ -250,10 +393,13 @@ public class MethodInfo {
 	 */
 	public String getSelectFields() {
 		StringBuffer selectFields = new StringBuffer();
-		int fieldsLength = dataBaseFieldInfoList.size();
-		for (int i = 0; i < fieldsLength; i++) {
-			DataBaseFieldInfo dataBaseFieldInfo = dataBaseFieldInfoList.get(i);
-			selectFields.append(dataBaseFieldInfo.getSelectField(fieldsLength, i));
+		int fieldsLength = prefixFiels.size();
+
+		int count = 0;
+		for (Map.Entry<String, DataBaseFieldInfo> entry : prefixFiels.entrySet()) {
+			DataBaseFieldInfo dataBaseFieldInfo = entry.getValue();
+			selectFields.append(dataBaseFieldInfo.getSelectField(fieldsLength, count));
+			count++;
 		}
 		setGroupBy(selectFields);
 		return selectFields.toString();
@@ -285,13 +431,9 @@ public class MethodInfo {
 		if (null != index && index > -1) {
 			String indexStr = "";
 			if (isVoOrPo) {
-				String listStr = "";
-				if (paramterType.equals(List.class.getName())) {
-					listStr = "list[0].";
-				}
-
-				indexStr = "#{" + listStr + this.tableInfo.getTableSuffix() + "}";
-				tableSuffix = this.tableInfo.getTableSeparator() + "${" + listStr + this.tableInfo.getTableSuffix() + "}";
+				String prefix = getVoOrPoPrefix();
+				indexStr = "#{" + prefix + this.tableInfo.getTableSuffix() + "}";
+				tableSuffix = this.tableInfo.getTableSeparator() + "${" + prefix + this.tableInfo.getTableSuffix() + "}";
 			} else {
 				indexStr = "#{param" + this.tableInfo.getIndex() + "}";
 				tableSuffix = this.tableInfo.getTableSeparator() + "${param" + this.tableInfo.getIndex() + "}";
@@ -300,6 +442,16 @@ public class MethodInfo {
 			tableSuffix = String.format(MapperTagReources.MAPPER_TABLE_SUFFIX, indexStr, tableSuffix);
 		}
 		return tableSuffix;
+	}
+
+	private String getVoOrPoPrefix() {
+		String resultStr = "";
+		if (paramterType.equals(List.class.getName())) {
+			resultStr = "list[0].";
+		} else if (!BASE_TYPE.contains(paramterType)) {
+			resultStr = "param" + this.tableInfo.getIndex() + ".";
+		}
+		return resultStr;
 	}
 
 	/**
@@ -338,10 +490,12 @@ public class MethodInfo {
 	 */
 	public String getInsertField() {
 		StringBuffer insertFields = new StringBuffer();
-		int fieldsLength = dataBaseFieldInfoList.size();
-		for (int i = 0; i < fieldsLength; i++) {
-			DataBaseFieldInfo dataBaseFieldInfo = dataBaseFieldInfoList.get(i);
-			insertFields.append(dataBaseFieldInfo.getInsertField(fieldsLength, i));
+		int fieldsLength = prefixFiels.size();
+		int count = 0;
+		for (Map.Entry<String, DataBaseFieldInfo> entry : prefixFiels.entrySet()) {
+			DataBaseFieldInfo dataBaseFieldInfo = entry.getValue();
+			insertFields.append(dataBaseFieldInfo.getInsertField(fieldsLength, count));
+			count++;
 		}
 		return insertFields.toString();
 	}
@@ -353,20 +507,25 @@ public class MethodInfo {
 	 */
 	public String getInsertValue() {
 		StringBuffer insertValue = new StringBuffer();
-		int fieldsLength = dataBaseFieldInfoList.size();
+		int fieldsLength = suffixFiels.size();
+		int count = 0;
+
 		if (fieldsLength > 0) {
 			insertValue.append("(");
-			for (int i = 0; i < fieldsLength; i++) {
-				DataBaseFieldInfo dataBaseFieldInfo = dataBaseFieldInfoList.get(i);
-				setTableInfoIndex(dataBaseFieldInfo.getFieldNameCamelCase(), i);
+
+			for (Map.Entry<String, DataBaseFieldInfo> entry : prefixFiels.entrySet()) {
+				DataBaseFieldInfo dataBaseFieldInfo = entry.getValue();
+				setTableInfoIndex(dataBaseFieldInfo.getFieldNameCamelCase(), count);
+
 				// 如果是集合，VALUE的填写方式不一样
-				if (isCollection) {
-					insertValue.append(dataBaseFieldInfo.getBatchInsertValue(fieldsLength, i, isVoOrPo));
+				if (isCollection || isArray) {
+					insertValue.append(dataBaseFieldInfo.getBatchInsertValue(fieldsLength, count, isVoOrPo));
 				} else {
-					insertValue.append(dataBaseFieldInfo.getInsertValue(fieldsLength, i, isVoOrPo));
+					insertValue.append(dataBaseFieldInfo.getInsertValue(fieldsLength, count, isVoOrPo));
 
 				}
 
+				count++;
 			}
 			insertValue.append(")");
 		}
@@ -408,6 +567,7 @@ public class MethodInfo {
 		}
 	}
 
+	@SuppressWarnings("all")
 	private void setAnnotationInfo(Annotation annotation) {
 		if (null != annotation) {
 			Method[] methods = annotation.annotationType().getMethods();
@@ -428,6 +588,9 @@ public class MethodInfo {
 						break;
 					case "distinct":
 						this.distinct = (boolean) method.invoke(annotation, null);
+						break;
+					case "returnPrimaryKey":
+						this.returnPrimaryKey = (boolean) method.invoke(annotation, null);
 						break;
 					}
 
@@ -488,10 +651,6 @@ public class MethodInfo {
 		return id;
 	}
 
-	public List<DataBaseFieldInfo> getDataBaseFieldInfoList() {
-		return dataBaseFieldInfoList;
-	}
-
 	/**
 	 * 向mybatis注册返回对象
 	 * 
@@ -502,7 +661,7 @@ public class MethodInfo {
 		RegisterAliasInfo registerAliasInfo = null;
 		try {
 			Class<?> clz = Class.forName(className);
-			String registerAliasName = FieldUtil.toCamelCase(clz.getSimpleName());
+			String registerAliasName = FieldUtil.toLowerCamelCase(clz.getSimpleName());
 			registerAliasInfo = new RegisterAliasInfo(registerAliasName, clz);
 			this.typeAliasRegistry.registerAlias(registerAliasName, clz);
 		} catch (Exception e) {
@@ -518,7 +677,14 @@ public class MethodInfo {
 	 * @return
 	 */
 	private String getReturnType(Method method) {
+
 		String resultType = method.getReturnType().getName();
+
+		// 如果是OBJECT类型，证明是泛型.因为框架决定不能够返回OBJECT类型
+		// OBJECT类型是由JAVA自动转换得来的结果
+		if (resultType.equals(Object.class.getName())) {
+			resultType = this.genericReturnType;
+		}
 
 		// 如果是List 获取泛型类型
 		// 如果是MAP,去掉泛型
@@ -528,6 +694,13 @@ public class MethodInfo {
 			if (resultType.startsWith(Map.class.getName())) {
 				resultType = Map.class.getName();
 			}
+
+			// 如果返回结果没有带. 是泛型 T
+			int pointIndex = resultType.indexOf(".");
+			if (pointIndex == -1) {
+				resultType = this.genericReturnType;
+			}
+
 		}
 
 		// 如果是MAP转换成hashmap
@@ -539,6 +712,7 @@ public class MethodInfo {
 		if (!BASE_TYPE.contains(resultType)) {
 			registerAlias(resultType);
 		}
+
 		return resultType;
 	}
 
@@ -549,6 +723,14 @@ public class MethodInfo {
 		if (-1 != startIndex && -1 != endIndex) {
 			genericityName = genericity.substring(startIndex + 1, endIndex);
 		}
+
+		startIndex = genericity.indexOf("[");
+		endIndex = genericity.indexOf("]");
+		if (-1 != startIndex && -1 != endIndex) {
+			genericityName = genericity.substring(0, startIndex);
+			isArray = true;
+		}
+
 		return genericityName;
 	}
 
@@ -562,7 +744,7 @@ public class MethodInfo {
 	}
 
 	public String getTableName() {
-		return this.tableInfo.getTableName();
+		return this.tableInfo.getTableNameUnderLine();
 	}
 
 	public String getParamterType() {
@@ -571,6 +753,26 @@ public class MethodInfo {
 
 	public boolean isCollection() {
 		return isCollection;
+	}
+
+	public boolean isArray() {
+		return isArray;
+	}
+
+	public void setArray(boolean isArray) {
+		this.isArray = isArray;
+	}
+
+	public boolean isReturnPrimaryKey() {
+		return returnPrimaryKey;
+	}
+
+	public void setReturnPrimaryKey(boolean returnPrimaryKey) {
+		this.returnPrimaryKey = returnPrimaryKey;
+	}
+
+	public String getPrimaryKey() {
+		return primaryKey;
 	}
 
 	class RegisterAliasInfo {

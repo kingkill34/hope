@@ -8,14 +8,17 @@ import com.duowan.hope.mybatis.annotation.HopeInsert;
 import com.duowan.hope.mybatis.annotation.HopeSelect;
 import com.duowan.hope.mybatis.annotation.HopeUpdate;
 import com.duowan.hope.mybatis.annotation.OP;
+import com.duowan.hope.mybatis.openum.Oe;
 import com.duowan.hope.mybatis.annotation.Table;
 import com.duowan.hope.test.entity.User;
 
 @Table(value = User.class, tableSuffix = "gameId")
 public interface UserDao {
 
+	User getUserTest(String loginName);
+	
 	// 返回单个ENTITY
-	// @HopeSelect
+	@HopeSelect
 	User getUser(String loginName);
 
 	// 返回list
@@ -71,7 +74,7 @@ public interface UserDao {
 	// @HopeSelect
 	List<User> testOP(@OP("!=") Integer id);
 
-	@HopeSelect
+	// @HopeSelect
 	List<User> testTSN(Integer id, Integer gameId);
 
 	// @HopeInsert
@@ -97,6 +100,15 @@ public interface UserDao {
 
 	Integer testDelete(Integer id, String gameId);
 
-	@HopeUpdate("id")
+	// @HopeUpdate("id")
 	Integer update(User user);
+
+	// @HopeUpdate
+	Integer updateByParams(User user, @OP("<=") Integer id, String loginPassword);
+
+	// @HopeUpdate
+	Integer updateFieldByParams(@OP(isUpdate = true) String nickName, @OP("<=") Integer id, String loginPassword);
+
+	// Integer testUpdate(User user,Integer id,String loginPassword);
+
 }
