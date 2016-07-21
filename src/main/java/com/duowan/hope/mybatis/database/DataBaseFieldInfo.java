@@ -88,9 +88,9 @@ public class DataBaseFieldInfo {
 
 			String insertField = "";
 			if (isVoOrPo) {
-				insertField = "#{item." + this.fieldNameCamelCase + "}" + getComma(fieldsLength, i);
+				insertField = String.format(TagReources.ITEM_PARAM, this.fieldNameCamelCase) + getComma(fieldsLength, i);
 			} else {
-				insertField = "#{" + this.fieldIndex + "}" + getComma(fieldsLength, i);
+				insertField = String.format(TagReources.EXPRESSION, this.fieldIndex) + getComma(fieldsLength, i);
 			}
 
 			if (!isNullAble && !StringUtils.isEmpty(defaultValue)) {// 不允许空，有默认值
