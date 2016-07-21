@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.duowan.hope.mybatis.annotation.HopeCount;
 import com.duowan.hope.mybatis.annotation.HopeDelete;
 import com.duowan.hope.mybatis.annotation.HopeInsert;
 import com.duowan.hope.mybatis.annotation.HopeSelect;
@@ -15,6 +16,10 @@ import com.duowan.hope.test.entity.UserName;
 
 @Table(value = UserName.class, page = 20)
 public interface UserNameDao {
+	
+	
+	@HopeSelect
+	List<UserName> getId(@OP(">")Integer id,String name);
 
 	@HopeInsert
 	Integer insertInteger(UserName userName);
@@ -81,6 +86,18 @@ public interface UserNameDao {
 
 	@HopeSelect
 	List<UserName> getIsNullByName(@OP(isNull = true) String nums, String name);
+
+	@HopeCount
+	Integer count();
+
+	@HopeCount("name")
+	Integer countName(String name);
+
+	@HopeCount(value = "name", distinct = true)
+	Integer countDistinctName(String name);
+	
+	@HopeCount(value = "isFirst", distinct = true,groupBy="id")
+	List<Map> countGroupbyName(boolean isFirst);
 
 	@HopeUpdate("id")
 	int update(UserName userName);

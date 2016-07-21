@@ -35,13 +35,4 @@ public class TestKeyIntTest extends AbstractJUnit4SpringContextTests {
 
 	}
 
-	@Test
-	public void testGetList() {
-		HopePage<TestKeyInt> list = testKeyIntDao.testGetList("frankie", 1, 1);
-		for (TestKeyInt tki : list) {
-			System.out.println(tki.getIdTest());
-		}
-		System.out.println(list);
-	}
-
 }

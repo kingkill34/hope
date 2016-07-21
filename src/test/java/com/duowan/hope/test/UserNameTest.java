@@ -595,4 +595,118 @@ public class UserNameTest extends AbstractJUnit4SpringContextTests {
 		Assert.isTrue(deleteResult > 0, "删除结果:" + deleteResult);
 	}
 
+	/**
+	 * 根据name 模糊查询获取输入字段数据,返回List<UserName>
+	 */
+	@Test
+	public void count() {
+		// 初始化数据
+		UserName[] userNames = new UserName[10];
+		for (int i = 0; i < 10; i++) {
+			UserName userName = new UserName();
+			userName.initListTestData(i);
+			userNames[i] = userName;
+		}
+
+		// 增加
+		Integer result = userNameDao.insertIntegerArray(userNames);
+		Assert.isTrue(result == 10, "插入结果:" + result);
+
+		Integer count = userNameDao.count();
+
+		Assert.isTrue(count.intValue() == 10, "count结果:" + (count.intValue() == 10));
+
+		// 删除
+		Integer deleteResult = userNameDao.deleteByLike("frankie");
+		Assert.isTrue(deleteResult > 0, "删除结果:" + deleteResult);
+	}
+
+	/**
+	 * 根据name 模糊查询获取输入字段数据,返回List<UserName>
+	 */
+	@Test
+	public void countName() {
+		// 初始化数据
+		UserName[] userNames = new UserName[10];
+		for (int i = 0; i < 10; i++) {
+			UserName userName = new UserName();
+			userName.initListSameTestData(i);
+			userNames[i] = userName;
+		}
+
+		// 增加
+		Integer result = userNameDao.insertIntegerArray(userNames);
+		Assert.isTrue(result == 10, "插入结果:" + result);
+
+		Integer count = userNameDao.countName("frankie");
+
+		Assert.isTrue(count.intValue() == 10, "count结果:" + (count.intValue() == 10));
+
+		// 删除
+		Integer deleteResult = userNameDao.deleteByLike("frankie");
+		Assert.isTrue(deleteResult > 0, "删除结果:" + deleteResult);
+	}
+
+	/**
+	 * 根据name 模糊查询获取输入字段数据,返回List<UserName>
+	 */
+	@Test
+	public void countDistinctName() {
+		// 初始化数据
+		UserName[] userNames = new UserName[10];
+		for (int i = 0; i < 10; i++) {
+			UserName userName = new UserName();
+			userName.initListSameTestData(i);
+			userNames[i] = userName;
+		}
+
+		// 增加
+		Integer result = userNameDao.insertIntegerArray(userNames);
+		Assert.isTrue(result == 10, "插入结果:" + result);
+
+		Integer count = userNameDao.countDistinctName("frankie");
+
+		Assert.isTrue(count.intValue() == 1, "count结果:" + (count.intValue() == 1));
+
+		// 删除
+		Integer deleteResult = userNameDao.deleteByLike("frankie");
+		Assert.isTrue(deleteResult > 0, "删除结果:" + deleteResult);
+	}
+
+	/**
+	 * 根据name 模糊查询获取输入字段数据,返回List<UserName>
+	 */
+	@Test
+	public void countGroupbyName() {
+		// 初始化数据
+		UserName[] userNames = new UserName[10];
+		for (int i = 0; i < 10; i++) {
+			UserName userName = new UserName();
+			userName.initListSameTestData(i);
+			userNames[i] = userName;
+		}
+
+		// 增加
+		Integer result = userNameDao.insertIntegerArray(userNames);
+		Assert.isTrue(result == 10, "插入结果:" + result);
+
+		List<Map> map = userNameDao.countGroupbyName(true);
+
+		// 删除
+		Integer deleteResult = userNameDao.deleteByLike("frankie");
+		Assert.isTrue(deleteResult > 0, "删除结果:" + deleteResult);
+	}
+
+	
+	/**
+	 * 根据name 模糊查询获取输入字段数据,返回List<UserName>
+	 */
+	@Test
+	public void getId() {
+
+
+		List<UserName> userName = userNameDao.getId(617,"frankie");
+		System.out.println(userName.size());
+	}
+	
 }

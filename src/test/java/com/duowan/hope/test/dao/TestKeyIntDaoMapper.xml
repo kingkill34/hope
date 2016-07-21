@@ -2,9 +2,4 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.duowan.hope.test.dao.TestKeyIntDao">
 
-	<select id="testGetList" resultType="testKeyInt">
-		select * from test_key_int where name=#{param1}
-	</select>
-
-
 </mapper>
