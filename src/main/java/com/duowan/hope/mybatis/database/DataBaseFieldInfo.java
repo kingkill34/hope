@@ -2,15 +2,15 @@ package com.duowan.hope.mybatis.database;
 
 import org.springframework.util.StringUtils;
 
+import com.duowan.hope.mybatis.TagReources;
 import com.duowan.hope.mybatis.annotation.OP;
 import com.duowan.hope.mybatis.util.FieldUtil;
 
 public class DataBaseFieldInfo {
 
-	private static final String AS = " as ";
-	private static final String AND = " AND ";
+	private static final String YES = "YES";
 
-	private String fieldName;
+	private String fieldName; // 字段名
 	private String fieldNameCamelCase;
 	private String fieldType;
 	private String operation;
@@ -32,13 +32,8 @@ public class DataBaseFieldInfo {
 		this.defaultValue = defaultValue;
 		this.isPrimaryKey = isPrimaryKey;
 		this.isEntityParam = true;
-		if (nullAble.equals("YES")) {
-			isNullAble = true;
-		}
-
-		if (autoincrement.equals("YES")) {
-			isAutoincrement = true;
-		}
+		isNullAble = nullAble.equals(YES);
+		isAutoincrement = autoincrement.equals(YES);
 	}
 
 	/**
@@ -48,7 +43,7 @@ public class DataBaseFieldInfo {
 	 */
 	public String getSelectField(Integer fieldsLength, Integer i) {
 		// field_name as fieldName,
-		return fieldName + AS + this.fieldNameCamelCase + getComma(fieldsLength, i);
+		return fieldName + TagReources.AS + this.fieldNameCamelCase + getComma(fieldsLength, i);
 	}
 
 	/**
@@ -67,7 +62,6 @@ public class DataBaseFieldInfo {
 	}
 
 	public String getInsertValue(Integer fieldsLength, Integer i, boolean isVoOrPo) {
-		String ifNotNull = "<if test=\"#{%s} != null \">#{%s}%s</if>";
 		String insertValue = "";
 		if (isModify()) {
 			String comma = getComma(fieldsLength, i);
@@ -75,13 +69,13 @@ public class DataBaseFieldInfo {
 			if (isVoOrPo) {
 				insertField = this.fieldNameCamelCase;
 			} else {
-				insertField = "param" + this.fieldIndex;
+				insertField = TagReources.PARAM + this.fieldIndex;
 			}
 
 			if (!isNullAble && !StringUtils.isEmpty(defaultValue)) {// 不允许空，有默认值
-				insertValue = String.format(ifNotNull, insertField, insertField, comma);
+				insertValue = String.format(TagReources.IF_NOT_NULL, insertField, insertField, comma);
 			} else {// 插入字段值允许空 // 插入字段值不允许空，也没有默认值 //两种情况
-				insertValue = "#{" + insertField + "}" + comma;
+				insertValue = String.format(TagReources.EXPRESSION, insertField) + comma;
 			}
 		}
 		return insertValue;
@@ -91,6 +85,7 @@ public class DataBaseFieldInfo {
 		String ifNotNull = "<if test=\"#{%s} != null \"> %s</if>";
 		String insertValue = "";
 		if (isModify()) {
+
 			String insertField = "";
 			if (isVoOrPo) {
 				insertField = "#{item." + this.fieldNameCamelCase + "}" + getComma(fieldsLength, i);
@@ -115,7 +110,7 @@ public class DataBaseFieldInfo {
 			if (isEntityParam) {
 				updateField = getMybatisParam() + this.fieldNameCamelCase;
 			} else {
-				updateField = "param" + this.fieldIndex;
+				updateField = TagReources.PARAM + this.fieldIndex;
 			}
 			updateValue = this.fieldName + "=#{" + updateField + "}" + getComma(fieldsLength, i);
 			updateValue = String.format(ifNotNull, updateField, updateValue);
@@ -126,7 +121,7 @@ public class DataBaseFieldInfo {
 	private String getMybatisParam() {
 		String param = "";
 		if (isSingleParam == false) {
-			param = "param" + this.fieldIndex + ".";
+			param = TagReources.PARAM + this.fieldIndex + ".";
 		}
 		return param;
 	}
@@ -134,8 +129,7 @@ public class DataBaseFieldInfo {
 	public String getWhereValue() {
 		String cdata = "<![CDATA[%s]]>";
 		String value = "#{param" + this.fieldIndex + "}";
-		
-		
+
 		if (isEntityParam) {
 			value = " #{" + getMybatisParam() + this.fieldNameCamelCase + "}";
 		}
@@ -145,20 +139,19 @@ public class DataBaseFieldInfo {
 			if (!op.value().equals("")) {
 				if (op.value().equals("like")) {
 					value = "\"%\"" + value + "\"%\"";
+					whereValue = String.format(cdata, op.value()) + " " + value;
 				}
-
-				whereValue = String.format(cdata, op.value()) + " " + value;
 			}
 
 			if (op.isNull()) {
-				whereValue = " is null";
+				whereValue = TagReources.IS_NULL;
 			}
 
 			if (op.isNotNull()) {
-				whereValue = " is not null";
+				whereValue = TagReources.IS_NOT_NULL;
 			}
 		}
-		return AND + fieldName + " " + whereValue;
+		return TagReources.AND + fieldName + " " + whereValue;
 	}
 
 	/**

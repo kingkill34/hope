@@ -10,8 +10,6 @@ public class HopePage<E> extends ArrayList<E> {
 	 */
 	private static final long serialVersionUID = 1L;
 
-	private String id;
-
 	private Integer pageSize;
 
 	private Integer pageNo;
@@ -58,14 +56,6 @@ public class HopePage<E> extends ArrayList<E> {
 
 	public void setTotalPage(Integer totalPage) {
 		this.totalPage = totalPage;
-	}
-
-	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
 	}
 
 }
