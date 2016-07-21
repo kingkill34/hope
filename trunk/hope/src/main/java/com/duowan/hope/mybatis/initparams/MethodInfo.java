@@ -18,7 +18,7 @@ import java.util.TreeMap;
 import org.apache.ibatis.type.TypeAliasRegistry;
 import org.springframework.util.StringUtils;
 
-import com.duowan.hope.mybatis.MapperTagReources;
+import com.duowan.hope.mybatis.TagReources;
 import com.duowan.hope.mybatis.annotation.HopeSelect;
 import com.duowan.hope.mybatis.annotation.HopeUpdate;
 import com.duowan.hope.mybatis.annotation.OP;
@@ -103,8 +103,8 @@ public class MethodInfo {
 	 * @param tableInfo
 	 */
 	public MethodInfo(Method method, Annotation annotation, Map<String, DataBaseFieldInfo> columns, TypeAliasRegistry typeAliasRegistry, TableInfo tableInfo, String genericReturnType, String namespace) {
-		this.typeAliasRegistry = typeAliasRegistry;
-		this.genericReturnType = genericReturnType;
+		this.typeAliasRegistry = typeAliasRegistry; // mybatis 注册对象
+		this.genericReturnType = genericReturnType; // 泛型类型
 		this.tableInfo = tableInfo;
 		this.id = method.getName();
 		setAnnotationInfo(annotation);
@@ -134,12 +134,12 @@ public class MethodInfo {
 
 			int count = 1;
 			for (Parameter parameter : parameters) {
-				if (parameter.getName().equals("pageSize")) {
-					methodPage.setPageSize("param" + count);
+				if (parameter.getName().equals(TagReources.PAGE_SIZE)) {
+					methodPage.setPageSize(TagReources.PARAM + count);
 				}
 
-				if (parameter.getName().equals("pageNo")) {
-					methodPage.setPageNo("param" + count);
+				if (parameter.getName().equals(TagReources.PAGE_NO)) {
+					methodPage.setPageNo(TagReources.PARAM + count);
 				}
 				count++;
 			}
@@ -439,7 +439,7 @@ public class MethodInfo {
 				tableSuffix = this.tableInfo.getTableSeparator() + "${param" + this.tableInfo.getIndex() + "}";
 			}
 
-			tableSuffix = String.format(MapperTagReources.MAPPER_TABLE_SUFFIX, indexStr, tableSuffix);
+			tableSuffix = String.format(TagReources.MAPPER_TABLE_SUFFIX, indexStr, tableSuffix);
 		}
 		return tableSuffix;
 	}
@@ -466,16 +466,17 @@ public class MethodInfo {
 		// 如果VALUE为空，默认count(1)
 		if (StringUtils.isEmpty(value)) {
 			fieldFormat = "count(1) as `count`";
+			selectFields.append(fieldFormat);
 		} else {
 
 			// 是否去重
 			String distinctStr = "";
 			if (distinct) {
-				distinctStr = "distinct";
+				distinctStr = TagReources.DISTINCT;
 			}
 			String[] values = this.value.split(",");
 			for (String v : values) {
-				fieldFormat = "count(" + distinctStr + " " + FieldUtil.toUnderlineName(v) + ")" + " as " + v;
+				fieldFormat = String.format(TagReources.COUNT, distinctStr + FieldUtil.toUnderlineName(v), v);
 				selectFields.append(fieldFormat);
 			}
 		}
@@ -553,7 +554,7 @@ public class MethodInfo {
 	private void setGroupBy(StringBuffer selectFields) {
 		if (selectFields.length() > 0 && !StringUtils.isEmpty(groupBy)) {
 			selectFields.append(",");
-			selectFields.append(FieldUtil.toUnderlineName(groupBy) + " as " + groupBy);
+			selectFields.append(FieldUtil.toUnderlineName(groupBy) + TagReources.AS + groupBy);
 		}
 	}
 
@@ -616,18 +617,10 @@ public class MethodInfo {
 		}
 	}
 
-	public String getReturnType() {
-		return returnType;
-	}
-
-	public Class<?> getReturnClass() {
-		return returnClass;
-	}
-
 	public String getOrderBy() {
-		String orderBy = getOrderBy(this.orderByASC, "ASC");
+		String orderBy = getOrderBy(this.orderByASC, TagReources.ASC);
 		if (StringUtils.isEmpty(orderBy)) {
-			orderBy = getOrderBy(this.orderByDESC, "DESC");
+			orderBy = getOrderBy(this.orderByDESC, TagReources.DESC);
 		}
 		return orderBy;
 	}
@@ -635,14 +628,14 @@ public class MethodInfo {
 	private String getOrderBy(String orderByFields, String sort) {
 		String orderBy = "";
 		if (!StringUtils.isEmpty(orderByFields)) {
-			orderBy = "order by " + FieldUtil.toUnderlineName(orderByFields) + " " + sort;
+			orderBy = TagReources.ORDER_BY + FieldUtil.toUnderlineName(orderByFields) + " " + sort;
 		}
 		return orderBy;
 	}
 
 	public String getGroupBy() {
 		if (!StringUtils.isEmpty(groupBy)) {
-			groupBy = "group by " + FieldUtil.toUnderlineName(groupBy);
+			groupBy = TagReources.GROUP_BY + FieldUtil.toUnderlineName(groupBy);
 		}
 		return groupBy;
 	}
@@ -741,6 +734,14 @@ public class MethodInfo {
 			genericityName = genericity.substring(0, startIndex);
 		}
 		return genericityName;
+	}
+
+	public String getReturnType() {
+		return returnType;
+	}
+
+	public Class<?> getReturnClass() {
+		return returnClass;
 	}
 
 	public String getTableName() {

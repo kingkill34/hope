@@ -177,21 +177,4 @@ public class PageInterceptor implements Interceptor {
 		return Integer.valueOf(value.toString());
 	}
 
-	/**
-	 * 获取方法ID 包名+方法名
-	 * 
-	 * @param handler
-	 * @return
-	 */
-	private String getMethodId(RoutingStatementHandler handler) {
-		// 获取 StatementHandler
-		MetaObject metaStatementHandlerMo = MetaObjectUtil.forObject(handler);
-		StatementHandler statementHandler = (StatementHandler) metaStatementHandlerMo.getValue("delegate");
-
-		// 获取MappedStatement
-		MetaObject statementHandlerMo = MetaObjectUtil.forObject(statementHandler);
-		MappedStatement mappedStatement = (MappedStatement) statementHandlerMo.getValue("mappedStatement");
-		return mappedStatement.getId();
-	}
-
 }

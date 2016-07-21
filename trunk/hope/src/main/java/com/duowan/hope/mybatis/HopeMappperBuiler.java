@@ -229,8 +229,8 @@ public class HopeMappperBuiler {
 		String tableName = methodInfo.getTableName();
 		String tableSuffix = methodInfo.getTableSuffix();
 
-		String context = String.format(MapperTagReources.SQL_UPDATE, tableName, tableSuffix, set, where);
-		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_DELETE);
+		String context = String.format(TagReources.SQL_UPDATE, tableName, tableSuffix, set, where);
+		Element element = root.addElement(TagReources.ELEMENT_TYPE_DELETE);
 		setElementAttr(element, methodInfo.getId(), null, null, context, null, null);
 	}
 
@@ -240,8 +240,8 @@ public class HopeMappperBuiler {
 		String tableName = methodInfo.getTableName();
 		String tableSuffix = methodInfo.getTableSuffix();
 
-		String context = String.format(MapperTagReources.SQL_DELETE, tableName, tableSuffix, where);
-		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_DELETE);
+		String context = String.format(TagReources.SQL_DELETE, tableName, tableSuffix, where);
+		Element element = root.addElement(TagReources.ELEMENT_TYPE_DELETE);
 		setElementAttr(element, methodInfo.getId(), null, null, context, null, null);
 	}
 
@@ -254,13 +254,13 @@ public class HopeMappperBuiler {
 		String isReturnPrimaryKey = "";
 		String primaryKey = "";
 
-		String formatStr = MapperTagReources.SQL_INSERT;
+		String formatStr = TagReources.SQL_INSERT;
 		if (methodInfo.isCollection()) {
-			formatStr = MapperTagReources.SQL_BATCH_INSERT_LIST;
+			formatStr = TagReources.SQL_BATCH_INSERT_LIST;
 		}
 
 		if (methodInfo.isArray()) {
-			formatStr = MapperTagReources.SQL_BATCH_INSERT_ARRAY;
+			formatStr = TagReources.SQL_BATCH_INSERT_ARRAY;
 		}
 
 		if (methodInfo.isReturnPrimaryKey()) {
@@ -269,7 +269,7 @@ public class HopeMappperBuiler {
 		}
 
 		String context = String.format(formatStr, tableName, tableSuffix, insertField, insertValue);
-		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_INSERT);
+		Element element = root.addElement(TagReources.ELEMENT_TYPE_INSERT);
 		setElementAttr(element, methodInfo.getId(), methodInfo.getParamterType(), null, context, isReturnPrimaryKey, primaryKey);
 	}
 
@@ -282,8 +282,8 @@ public class HopeMappperBuiler {
 		String tableName = methodInfo.getTableName();
 		String tableSuffix = methodInfo.getTableSuffix();
 
-		String context = String.format(MapperTagReources.SQL_SELECT, selectFields, tableName, tableSuffix, where, groupBy, orderBy);
-		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_SELECT);
+		String context = String.format(TagReources.SQL_SELECT, selectFields, tableName, tableSuffix, where, groupBy, orderBy);
+		Element element = root.addElement(TagReources.ELEMENT_TYPE_SELECT);
 		setElementAttr(element, methodInfo.getId(), null, methodInfo.getReturnType(), context, null, null);
 	}
 
@@ -296,8 +296,8 @@ public class HopeMappperBuiler {
 		String tableName = methodInfo.getTableName();
 		String tableSuffix = methodInfo.getTableSuffix();
 
-		String sql = String.format(MapperTagReources.SQL_SELECT, selectFields, tableName, tableSuffix, where, groupBy, orderBy);
-		Element element = root.addElement(MapperTagReources.ELEMENT_TYPE_SELECT);
+		String sql = String.format(TagReources.SQL_SELECT, selectFields, tableName, tableSuffix, where, groupBy, orderBy);
+		Element element = root.addElement(TagReources.ELEMENT_TYPE_SELECT);
 		setElementAttr(element, methodInfo.getId(), null, methodInfo.getReturnType(), sql, null, null);
 	}
 
@@ -351,19 +351,19 @@ public class HopeMappperBuiler {
 
 	private void setElementAttr(Element element, String mapperId, String parameterType, String resultType, String context, String useGeneratedKeys, String keyProperty) {
 		if (!StringUtils.isEmpty(mapperId)) {
-			element.addAttribute(MapperTagReources.MAPPER_ID, mapperId);
+			element.addAttribute(TagReources.MAPPER_ID, mapperId);
 		}
 		if (!StringUtils.isEmpty(parameterType)) {
-			element.addAttribute(MapperTagReources.MAPPER_PARAMETER_TYPE, parameterType);
+			element.addAttribute(TagReources.MAPPER_PARAMETER_TYPE, parameterType);
 		}
 		if (!StringUtils.isEmpty(resultType)) {
-			element.addAttribute(MapperTagReources.MAPPER_RESULT_TYPE, resultType);
+			element.addAttribute(TagReources.MAPPER_RESULT_TYPE, resultType);
 		}
 		if (!StringUtils.isEmpty(useGeneratedKeys)) {
-			element.addAttribute(MapperTagReources.USE_GENERATED_KEYS, useGeneratedKeys);
+			element.addAttribute(TagReources.USE_GENERATED_KEYS, useGeneratedKeys);
 		}
 		if (!StringUtils.isEmpty(keyProperty)) {
-			element.addAttribute(MapperTagReources.KEY_PROPERTY, keyProperty);
+			element.addAttribute(TagReources.KEY_PROPERTY, keyProperty);
 		}
 
 		element.setText(context);
