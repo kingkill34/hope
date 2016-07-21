@@ -42,7 +42,11 @@ public class HopeMappperBuiler {
 	private static final String NAME_SPACE = "namespace";
 	private static final String UTF_8 = "utf-8";
 	private static final String COLUMN_NAME = "COLUMN_NAME";
-	public static final Set<String> CONSTANT = new HashSet<String>();
+	private static final String TYPE_NAME = "TYPE_NAME";
+	private static final String IS_NULLABLE = "IS_NULLABLE";
+	private static final String COLUMN_DEF = "TYPE_NAME";
+	private static final String IS_AUTOINCREMENT = "IS_AUTOINCREMENT";
+
 	private static Set<String> PRIMARY_KEY = new HashSet<>();
 	private String genericReturnType;
 
@@ -230,7 +234,7 @@ public class HopeMappperBuiler {
 		String tableSuffix = methodInfo.getTableSuffix();
 
 		String context = String.format(TagReources.SQL_UPDATE, tableName, tableSuffix, set, where);
-		Element element = root.addElement(TagReources.ELEMENT_TYPE_DELETE);
+		Element element = root.addElement(TagReources.ELEMENT_TYPE_UPDATE);
 		setElementAttr(element, methodInfo.getId(), null, null, context, null, null);
 	}
 
@@ -320,19 +324,22 @@ public class HopeMappperBuiler {
 		boolean isPrimaryKey = false;
 
 		try {
+			// 获取主键
 			DatabaseMetaData databaseMetaData = connection.getMetaData();
 			ResultSet primaryKeys = databaseMetaData.getPrimaryKeys(null, null, tableName);
 			while (primaryKeys.next()) {
 				PRIMARY_KEY.add(primaryKeys.getString(COLUMN_NAME).toLowerCase());
 			}
+
+			// 获取字段信息
 			ResultSet resultSet = databaseMetaData.getColumns(null, null, tableName, "%");
 			while (resultSet.next()) {
 				isPrimaryKey = false;
 				columnName = resultSet.getString(COLUMN_NAME).toLowerCase();
-				typeName = resultSet.getString("TYPE_NAME");
-				nullAble = resultSet.getString("IS_NULLABLE"); // 是否允许NULL
-				defaultValue = resultSet.getString("COLUMN_DEF"); // 字段默认值
-				autoincrement = resultSet.getString("IS_AUTOINCREMENT"); // 是否自增长
+				typeName = resultSet.getString(TYPE_NAME);
+				nullAble = resultSet.getString(IS_NULLABLE); // 是否允许NULL
+				defaultValue = resultSet.getString(COLUMN_DEF); // 字段默认值
+				autoincrement = resultSet.getString(IS_AUTOINCREMENT); // 是否自增长
 
 				// 是否为主键
 				if (PRIMARY_KEY.contains(columnName)) {
