@@ -432,11 +432,11 @@ public class MethodInfo {
 			String indexStr = "";
 			if (isVoOrPo) {
 				String prefix = getVoOrPoPrefix();
-				indexStr = "#{" + prefix + this.tableInfo.getTableSuffix() + "}";
-				tableSuffix = this.tableInfo.getTableSeparator() + "${" + prefix + this.tableInfo.getTableSuffix() + "}";
+				indexStr = String.format(TagReources.EXPRESSION_HAS_KEY, prefix + this.tableInfo.getTableSuffix());
+				tableSuffix = this.tableInfo.getTableSeparator() + String.format(TagReources.EXPRESSION_$, prefix + this.tableInfo.getTableSuffix());
 			} else {
-				indexStr = "#{param" + this.tableInfo.getIndex() + "}";
-				tableSuffix = this.tableInfo.getTableSeparator() + "${param" + this.tableInfo.getIndex() + "}";
+				indexStr = String.format(TagReources.EXPRESSION_PARAM_HAS_KEY, this.tableInfo.getIndex());
+				tableSuffix = this.tableInfo.getTableSeparator() + String.format(TagReources.EXPRESSION_PARAM_$, this.tableInfo.getIndex());
 			}
 
 			tableSuffix = String.format(TagReources.MAPPER_TABLE_SUFFIX, indexStr, tableSuffix);
@@ -449,7 +449,7 @@ public class MethodInfo {
 		if (paramterType.equals(List.class.getName())) {
 			resultStr = "list[0].";
 		} else if (!BASE_TYPE.contains(paramterType)) {
-			resultStr = "param" + this.tableInfo.getIndex() + ".";
+			resultStr = TagReources.PARAM + this.tableInfo.getIndex() + ".";
 		}
 		return resultStr;
 	}

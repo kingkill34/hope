@@ -27,11 +27,27 @@ import com.duowan.hope.mybatis.initparams.MethodPage;
 import com.duowan.hope.mybatis.initparams.MethodPageInfo;
 import com.duowan.hope.mybatis.util.MetaObjectUtil;
 
+/**
+ * 分页拦截器
+ * 
+ * @author frankie
+ * @date 2016年7月22日 上午10:09:23
+ */
 @Intercepts({ @Signature(type = StatementHandler.class, method = "prepare", args = { Connection.class }),
 		@Signature(type = ResultSetHandler.class, method = "handleResultSets", args = { Statement.class }) })
 public class PageInterceptor implements Interceptor {
 
 	public static final ThreadLocal<HopePage<?>> localHopePage = new ThreadLocal<HopePage<?>>();
+
+	private static final String DELEGATE = "delegate";
+
+	private static final String MAPPEDSTATEMENT = "mappedStatement";
+
+	private static final String DELEGATE_BOUNDSQL_SQL = "delegate.boundSql.sql";
+
+	private static final String COUNT_SQL = "select count(0) from (%s) as countTable";
+
+	private static final String LIMIT = " limit %s,%s";
 
 	@Override
 	public Object intercept(Invocation invocation) throws Throwable {
@@ -42,11 +58,11 @@ public class PageInterceptor implements Interceptor {
 
 			// 获取 StatementHandler
 			MetaObject metaStatementHandlerMo = MetaObjectUtil.forObject(handler);
-			StatementHandler statementHandler = (StatementHandler) metaStatementHandlerMo.getValue("delegate");
+			StatementHandler statementHandler = (StatementHandler) metaStatementHandlerMo.getValue(DELEGATE);
 
 			// 获取MappedStatement
 			MetaObject statementHandlerMo = MetaObjectUtil.forObject(statementHandler);
-			MappedStatement mappedStatement = (MappedStatement) statementHandlerMo.getValue("mappedStatement");
+			MappedStatement mappedStatement = (MappedStatement) statementHandlerMo.getValue(MAPPEDSTATEMENT);
 
 			String methodId = mappedStatement.getId();
 
@@ -59,7 +75,7 @@ public class PageInterceptor implements Interceptor {
 				}
 
 				// 以MAP的形式传递分页参数
-				Map params = (Map) obj;
+				Map<String, Object> params = (Map<String, Object>) obj;
 				// 设置分页信息
 				HopePage<?> hopePage = localHopePage.get();
 				if (null == hopePage) {
@@ -73,7 +89,7 @@ public class PageInterceptor implements Interceptor {
 				setTotalCount(connection, mappedStatement, boundSql, hopePage);
 
 				String sql = buildSelectSql(boundSql.getSql(), hopePage);
-				metaStatementHandlerMo.setValue("delegate.boundSql.sql", sql);
+				metaStatementHandlerMo.setValue(DELEGATE_BOUNDSQL_SQL, sql);
 			}
 		} else if (invocation.getTarget() instanceof ResultSetHandler) {
 			// 将结果塞进PAGE对象
@@ -105,7 +121,7 @@ public class PageInterceptor implements Interceptor {
 	private String buildSelectSql(String sql, HopePage<?> hopePage) {
 		int start = (hopePage.getPageNo() - 1) * hopePage.getPageSize();
 		int end = hopePage.getPageSize();
-		sql += " limit " + start + "," + end;
+		sql += String.format(LIMIT, start, end);
 		return sql;
 	}
 
@@ -120,13 +136,17 @@ public class PageInterceptor implements Interceptor {
 	 */
 	private void setTotalCount(Connection connection, MappedStatement mappedStatement, BoundSql boundSql, HopePage<?> hopePage) {
 		// 记录总记录数
-		String countSql = "select count(0) from (" + boundSql.getSql() + ") as countTable";
+		String countSql = String.format(COUNT_SQL, boundSql.getSql());
 		PreparedStatement countStmt = null;
 		ResultSet rs = null;
 		try {
 			countStmt = connection.prepareStatement(countSql);
 			BoundSql countBS = new BoundSql(mappedStatement.getConfiguration(), countSql, boundSql.getParameterMappings(), boundSql.getParameterObject());
-			setParameters(countStmt, mappedStatement, countBS, boundSql.getParameterObject());
+
+			// 设置参数
+			ParameterHandler parameterHandler = new DefaultParameterHandler(mappedStatement, boundSql.getParameterObject(), countBS);
+			parameterHandler.setParameters(countStmt);
+
 			rs = countStmt.executeQuery();
 			int totalCount = 0;
 			if (rs.next()) {
@@ -140,20 +160,6 @@ public class PageInterceptor implements Interceptor {
 		} finally {
 			close(countStmt, rs);
 		}
-	}
-
-	/**
-	 * 代入参数值
-	 * 
-	 * @param ps
-	 * @param mappedStatement
-	 * @param boundSql
-	 * @param parameterObject
-	 * @throws SQLException
-	 */
-	private void setParameters(PreparedStatement ps, MappedStatement mappedStatement, BoundSql boundSql, Object parameterObject) throws SQLException {
-		ParameterHandler parameterHandler = new DefaultParameterHandler(mappedStatement, parameterObject, boundSql);
-		parameterHandler.setParameters(ps);
 	}
 
 	private void close(PreparedStatement countStmt, ResultSet rs) {

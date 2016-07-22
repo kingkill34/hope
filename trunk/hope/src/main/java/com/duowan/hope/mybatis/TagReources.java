@@ -1,7 +1,5 @@
 package com.duowan.hope.mybatis;
 
-import com.duowan.hope.mybatis.util.FieldUtil;
-
 public class TagReources {
 
 	// mybatis tag
@@ -12,8 +10,6 @@ public class TagReources {
 	public static final String ELEMENT_TYPE_UPDATE = "update";
 
 	public static final String ELEMENT_TYPE_DELETE = "delete";
-
-	// mybatis tag
 
 	// mybatis xml params
 	public static final String MAPPER_ID = "id";
@@ -26,6 +22,8 @@ public class TagReources {
 
 	public static final String KEY_PROPERTY = "keyProperty";
 
+	public static final String CDATA = "<![CDATA[%s]]>";
+
 	// mybatis dynamics sql
 	public static final String MAPPER_TABLE_SUFFIX = "<if test=\"%s != null \">%s</if>";
 	public static final String IF_NOT_NULL = "<if test=\"#{%s} != null \">#{%s}%s</if>";
@@ -36,16 +34,20 @@ public class TagReources {
 	public static final String LIKE = "like";
 	public static final String AS = " as ";
 	public static final String AND = " AND ";
-	public static final String GROUP_BY = "group by ";
-	public static final String ORDER_BY = "order by ";
+	public static final String GROUP_BY = " group by ";
+	public static final String ORDER_BY = " order by ";
 	public static final String ASC = "asc";
 	public static final String DESC = "desc";
 	public static final String DISTINCT = "distinct ";
+	public static final String EQ = "=";
 
 	// param
 	public static final String PARAM = "param";
 	public static final String ITEM_PARAM = "#{item.%s}";
-	public static final String EXPRESSION = "#{%s}";
+	public static final String EXPRESSION_HAS_KEY = "#{%s}";
+	public static final String EXPRESSION_PARAM_HAS_KEY = "#{param%s}";
+	public static final String EXPRESSION_$ = "${%s}";
+	public static final String EXPRESSION_PARAM_$ = "${param%s}";
 
 	// page
 	public static final String PAGE_SIZE = "pageSize";

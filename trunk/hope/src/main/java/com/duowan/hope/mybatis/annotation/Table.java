@@ -15,8 +15,4 @@ public @interface Table {
 
 	String tableSeparator() default "_";
 
-	int currenyPage() default 1;
-
-	int page() default 1;
-
 }
