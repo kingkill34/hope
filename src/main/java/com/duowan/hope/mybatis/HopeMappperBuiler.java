@@ -61,7 +61,6 @@ public class HopeMappperBuiler {
 
 			// 构建XML
 			buildSqls(root, connection);
-
 			// 将XML转换成inputStream,但并不写入物理文件
 			inputStream = new ByteArrayInputStream(StringEscapeUtils.unescapeXml(document.asXML()).getBytes(UTF_8));
 
@@ -286,9 +285,9 @@ public class HopeMappperBuiler {
 		String tableName = methodInfo.getTableName();
 		String tableSuffix = methodInfo.getTableSuffix();
 
-		String context = String.format(TagReources.SQL_SELECT, selectFields, tableName, tableSuffix, where, groupBy, orderBy);
+		String sql = String.format(TagReources.SQL_SELECT, selectFields, tableName, tableSuffix, where, groupBy, orderBy);
 		Element element = root.addElement(TagReources.ELEMENT_TYPE_SELECT);
-		setElementAttr(element, methodInfo.getId(), null, methodInfo.getReturnType(), context, null, null);
+		setElementAttr(element, methodInfo.getId(), null, methodInfo.getReturnType(), sql, null, null);
 	}
 
 	private void buildSelect(MethodInfo methodInfo, Element root) {

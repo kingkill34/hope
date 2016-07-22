@@ -14,12 +14,11 @@ import com.duowan.hope.mybatis.annotation.OP;
 import com.duowan.hope.mybatis.annotation.Table;
 import com.duowan.hope.test.entity.UserName;
 
-@Table(value = UserName.class, page = 20)
+@Table(value = UserName.class)
 public interface UserNameDao {
-	
-	
+
 	@HopeSelect
-	List<UserName> getId(@OP(">")Integer id,String name);
+	List<UserName> getId(@OP(">") Integer id, String name);
 
 	@HopeInsert
 	Integer insertInteger(UserName userName);
@@ -95,8 +94,8 @@ public interface UserNameDao {
 
 	@HopeCount(value = "name", distinct = true)
 	Integer countDistinctName(String name);
-	
-	@HopeCount(value = "isFirst", distinct = true,groupBy="id")
+
+	@HopeCount(value = "isFirst", distinct = true, groupBy = "id")
 	List<Map> countGroupbyName(boolean isFirst);
 
 	@HopeUpdate("id")

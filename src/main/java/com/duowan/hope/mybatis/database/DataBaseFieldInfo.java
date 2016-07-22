@@ -19,7 +19,6 @@ public class DataBaseFieldInfo {
 	private boolean isNullAble = false;
 	private boolean isAutoincrement = false;
 	private int fieldIndex;
-	private boolean isDistinct = false;
 	private boolean isEntityParam;
 	private boolean isSingleParam;
 	private boolean isListOrArray;
@@ -75,7 +74,7 @@ public class DataBaseFieldInfo {
 			if (!isNullAble && !StringUtils.isEmpty(defaultValue)) {// 不允许空，有默认值
 				insertValue = String.format(TagReources.IF_NOT_NULL, insertField, insertField, comma);
 			} else {// 插入字段值允许空 // 插入字段值不允许空，也没有默认值 //两种情况
-				insertValue = String.format(TagReources.EXPRESSION, insertField) + comma;
+				insertValue = String.format(TagReources.EXPRESSION_HAS_KEY, insertField) + comma;
 			}
 		}
 		return insertValue;
@@ -90,7 +89,7 @@ public class DataBaseFieldInfo {
 			if (isVoOrPo) {
 				insertField = String.format(TagReources.ITEM_PARAM, this.fieldNameCamelCase) + getComma(fieldsLength, i);
 			} else {
-				insertField = String.format(TagReources.EXPRESSION, this.fieldIndex) + getComma(fieldsLength, i);
+				insertField = String.format(TagReources.EXPRESSION_HAS_KEY, this.fieldIndex) + getComma(fieldsLength, i);
 			}
 
 			if (!isNullAble && !StringUtils.isEmpty(defaultValue)) {// 不允许空，有默认值
@@ -112,7 +111,7 @@ public class DataBaseFieldInfo {
 			} else {
 				updateField = TagReources.PARAM + this.fieldIndex;
 			}
-			updateValue = this.fieldName + "=#{" + updateField + "}" + getComma(fieldsLength, i);
+			updateValue = this.fieldName + TagReources.EQ + String.format(TagReources.EXPRESSION_HAS_KEY, updateField) + getComma(fieldsLength, i);
 			updateValue = String.format(ifNotNull, updateField, updateValue);
 		}
 		return updateValue;
@@ -127,19 +126,17 @@ public class DataBaseFieldInfo {
 	}
 
 	public String getWhereValue() {
-		String cdata = "<![CDATA[%s]]>";
-		String value = "#{param" + this.fieldIndex + "}";
-
+		String value = String.format(TagReources.EXPRESSION_HAS_KEY, TagReources.PARAM + this.fieldIndex);
 		if (isEntityParam) {
-			value = " #{" + getMybatisParam() + this.fieldNameCamelCase + "}";
+			value = String.format(TagReources.EXPRESSION_HAS_KEY, getMybatisParam() + this.fieldNameCamelCase);
 		}
 
-		String whereValue = " = " + value;
+		String whereValue = TagReources.EQ + value;
 		if (op != null) {
 			if (!op.value().equals("")) {
-				if (op.value().equals("like")) {
+				if (op.value().equals(TagReources.LIKE)) {
 					value = "\"%\"" + value + "\"%\"";
-					whereValue = String.format(cdata, op.value()) + " " + value;
+					whereValue = String.format(TagReources.CDATA, op.value()) + " " + value;
 				}
 			}
 
@@ -252,14 +249,6 @@ public class DataBaseFieldInfo {
 		this.op = op;
 	}
 
-	public boolean isDistinct() {
-		return isDistinct;
-	}
-
-	public void setDistinct(boolean isDistinct) {
-		this.isDistinct = isDistinct;
-	}
-
 	public String getFieldNameCamelCase() {
 		return fieldNameCamelCase;
 	}
@@ -286,6 +275,10 @@ public class DataBaseFieldInfo {
 
 	public void setListOrArray(boolean isListOrArray) {
 		this.isListOrArray = isListOrArray;
+	}
+
+	public static void main(String[] args) {
+
 	}
 
 }
